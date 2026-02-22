@@ -1,0 +1,57 @@
+services:
+  neo4j:
+    image: neo4j:5
+    env_file: .env
+    environment:
+      NEO4J_AUTH: ${DB_USER}/${DB_PASSWORD}
+    networks:
+      - cloudexplorernet
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j_data:/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/var/lib/neo4j/bin/cypher-shell",
+          "-u",
+          "${DB_USER}",
+          "-p",
+          "${DB_PASSWORD}",
+          "RETURN 1",
+        ]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    networks:
+      - cloudexplorernet
+    ports:
+      - "3000:3000"
+    env_file: .env
+    depends_on:
+      neo4j:
+        condition: service_healthy
+    command: >
+      sh -c "
+        # if azure environment variables are not set, prompt user to login
+        if [ -z "$AZURE_CLIENT_ID" ] || [ -z "$AZURE_TENANT_ID" ] || [ -z "$AZURE_CLIENT_SECRET" ]; then
+        echo 'Azure environment variables not set. Please login to Azure:';
+          az login --use-device-code;
+        fi
+          node server.js
+      "
+
+volumes:
+  neo4j_data:
+    driver: local
+
+networks:
+  cloudexplorernet:
+    driver: bridge
