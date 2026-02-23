@@ -1,88 +1,141 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
-import AzureSecurityGraph from "../components/azure_security_graph";
-import RiskDashboard, {
-  CardScenarioClickEvent,
-} from "../components/risk_dashboard";
-import InstancesPanel from "../components/instances_panel";
-import CloudIcon from "../components/cloud_icon";
-import useSWRMutation from "swr/mutation";
-import { GraphQueryType } from "../types";
+import { useState } from "react";
+import { ResourceGraphClient } from "@azure/arm-resourcegraph";
+import { Client as GraphClient } from "@microsoft/microsoft-graph-client";
 
-import { useActiveGraph, useGraphData } from "@/src/hooks/useGraph";
-import { useStats } from "@/src/hooks/useStats";
+import CloudIcon from "../components/cloud_icon";
+import { InteractiveBrowserCredential } from "@azure/identity";
+
+// TODO: verify this actually works
+export function headers() {
+  return [
+    {
+      source: "/(.*)",
+      headers: [
+        {
+          key: "Cross-Origin-Opener-Policy",
+          value: "same-origin-allow-popups",
+        },
+      ],
+    },
+  ];
+}
+
+class AzureBrowserCredential {
+  private credential: InteractiveBrowserCredential | null = null;
+  private displayName: string | null = null;
+
+  async signIn(clientId: string, tenantId: string) {
+    this.credential = new InteractiveBrowserCredential({
+      clientId,
+      tenantId,
+      redirectUri: window.location.href,
+      loginStyle: "popup",
+    });
+
+    const token = await this.credential.getToken(
+      "offline_access openid profile User.Read",
+    );
+
+    const graphClient = GraphClient.initWithMiddleware({
+      authProvider: {
+        getAccessToken: async () => token?.token || "",
+      },
+    });
+
+    const profile = await graphClient.api("/me").get();
+    this.displayName = profile.displayName || profile.userPrincipalName;
+    return this;
+  }
+
+  getCredential() {
+    return this.credential;
+  }
+
+  getDisplayName() {
+    return this.displayName;
+  }
+}
 
 export default function Home() {
-  const { stats, mutateStats } = useStats();
-
-  const { activeQuery, setActiveQuery } = useActiveGraph();
-  const { graphData, graphLoading, graphError } = useGraphData(activeQuery);
-
-  const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(
-    null,
+  const [clientId, setClientId] = useState<string>(
+    process.env.NEXT_PUBLIC_AZURE_CLIENT_ID || "",
   );
-  const [globalRefreshKey, setGlobalRefreshKey] = useState(0);
+  const [tenantId, setTenantId] = useState<string>(
+    process.env.NEXT_PUBLIC_AZURE_TENANT_ID || "common",
+  );
 
-  const {
-    trigger: triggerScanMutation,
-    isMutating: scanMutating,
-    error: scanError,
-  } = useSWRMutation("/api/scan", async () => {
-    const res = await fetch("/api/scan", { method: "POST" });
-    if (!res.ok) {
-      throw new Error(await res.text());
-    }
-    return res.json();
-  });
+  const [azureCredential, setAzureCredential] =
+    useState<AzureBrowserCredential | null>(null);
 
-  const triggerScan = async () => {
-    try {
-      await triggerScanMutation();
-      await mutateStats();
-      setGlobalRefreshKey((k) => k + 1);
-
-      console.log("Scan completed and dashboard refreshed");
-    } catch (e) {
-      console.error(
-        "Error triggering scan:",
-        e instanceof Error ? e.message : e,
+  const handleSignIn = async () => {
+    if (!clientId && !tenantId) {
+      console.warn(
+        "Client ID and Tenant ID must be provided before signing in",
       );
+      return;
+    }
+
+    try {
+      const x = await new AzureBrowserCredential().signIn(clientId, tenantId);
+      setAzureCredential(x);
+      console.log("User signed in with AzureBrowserCredential", {
+        displayName: x.getDisplayName(),
+      });
+    } catch (e) {
+      console.error("Sign in failed", e);
     }
   };
 
-  useEffect(() => {
-    const handler = (ev: CardScenarioClickEvent) => {
-      console.log(
-        "Received CardScenarioClickEvent for scenario:",
-        ev.scenarioId,
-      );
-      setSelectedScenarioId(ev.scenarioId);
-    };
-    window.addEventListener(CardScenarioClickEvent.eventName, handler);
-    return () =>
-      window.removeEventListener(CardScenarioClickEvent.eventName, handler);
-  }, []);
-
-  const prevScenarioRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (selectedScenarioId && prevScenarioRef.current !== selectedScenarioId) {
-      setActiveQuery(null);
+  const resourceGraphQuery = async () => {
+    try {
+      const credential = azureCredential?.getCredential();
+      if (!credential) {
+        console.warn("not signed in yet");
+        return;
+      }
+      const client = new ResourceGraphClient(credential);
+      client
+        .resources({
+          query: "resources",
+        })
+        .then((response) => {
+          console.log("Azure Resource Graph response", response);
+        })
+        .catch((err) => {
+          console.error("Azure Resource Graph query failed", err);
+        });
+    } catch (e) {
+      console.error("Azure call failed", e);
     }
-    prevScenarioRef.current = selectedScenarioId;
-  }, [selectedScenarioId, setActiveQuery]);
+  };
 
-  useEffect(() => {
-    triggerScan();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const msGraphQuery = async () => {
+    try {
+      const credential = azureCredential?.getCredential();
+      if (!credential) {
+        console.warn("not signed in yet");
+        return;
+      }
+      const client = GraphClient.initWithMiddleware({
+        authProvider: {
+          getAccessToken: async () => {
+            const token = await credential.getToken("Directory.Read.All");
+            return token?.token || "";
+          },
+        },
+      });
 
-  const isFullGraphView =
-    activeQuery && activeQuery.type === GraphQueryType.Full;
+      const users = await client.api("/directoryObjects/getByIds").post({
+        ids: ["00000002-0000-0000-c000-000000000000"],
+        types: ["User", "ServicePrincipal", "Group", "Application"],
+      });
+      console.log("Microsoft Graph /directoryObjects/getByIds response", users);
+    } catch (e) {
+      console.error("Microsoft Graph call failed", e);
+    }
+  };
 
-  const openIssuesCount = stats.reduce(
-    (acc, s) => acc + (s.severity === "Safe" ? 0 : s.count),
-    0,
-  );
   return (
     <div className="min-h-screen flex flex-col items-center">
       <header className="w-full sticky top-0 z-30">
@@ -94,94 +147,78 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-6">
-            <div className="ml-3 inline-flex items-center gap-2 text-sm">
-              <span>Open issues:</span>
-              <span
-                className={`px-2 py-0.5 text-white rounded-full text-sm ${openIssuesCount > 0 ? "bg-red-500" : "bg-green-500"}`}
-              >
-                {openIssuesCount}
-              </span>
-            </div>
-
             <div className="flex items-center gap-3">
-              <button
-                type="button"
-                className="navbar-button"
-                onClick={triggerScan}
-                disabled={scanMutating}
-                aria-busy={scanMutating}
-                title={scanError ? String(scanError) : undefined}
-              >
-                {scanMutating ? "Scanning..." : "Scan / Refresh"}
-              </button>
+              <div className="flex flex-col text-xs">
+                <label className="flex flex-col">
+                  Client ID
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={clientId}
+                    onChange={(e) => setClientId(e.target.value)}
+                    placeholder="Azure AD App Client ID"
+                  />
+                </label>
+                <label className="flex flex-col mt-1">
+                  Tenant ID
+                  <input
+                    type="text"
+                    className="input-field"
+                    value={tenantId}
+                    onChange={(e) => setTenantId(e.target.value)}
+                    placeholder="Tenant ID (or 'common')"
+                  />
+                </label>
+              </div>
 
               <button
                 type="button"
                 className="navbar-button"
-                onClick={() => {
-                  setSelectedScenarioId(null);
-                  setActiveQuery({ type: GraphQueryType.Full });
-                }}
-                disabled={graphLoading}
-                aria-busy={graphLoading}
+                onClick={handleSignIn}
+                disabled={!!azureCredential}
                 title={
-                  graphError
-                    ? String(graphError)
-                    : "Query the entire graph (all nodes & relationships)"
+                  !!azureCredential
+                    ? "Already connected"
+                    : "Sign in with Azure InteractiveBrowserCredential"
                 }
               >
-                {graphLoading ? "Loading..." : "View full graph"}
+                {!!azureCredential
+                  ? `Connected as ${azureCredential?.getDisplayName()}`
+                  : "Sign in"}
               </button>
             </div>
           </div>
         </div>
       </header>
+      <main>
+        <button
+          type="button"
+          className="navbar-button"
+          onClick={resourceGraphQuery}
+          disabled={!azureCredential}
+          title={
+            !!azureCredential
+              ? "Call Azure Management API and log result"
+              : "Sign in first"
+          }
+        >
+          Resource Graph Query
+        </button>
 
-      <div className="w-full p-6">
-        <div className="w-full max-w-full mb-4">
-          <RiskDashboard stats={stats} />
-        </div>
-
-        <div className="w-full max-w-full grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
-          {!isFullGraphView && (
-            <div className="w-full overflow-y-scroll h-full max-h-[600px]">
-              <InstancesPanel
-                key={selectedScenarioId ?? "none"}
-                scenarioId={selectedScenarioId}
-                refreshKey={globalRefreshKey}
-                properties={(() => {
-                  const current_stat = stats.find(
-                    (s) => s.id === selectedScenarioId,
-                  );
-                  return current_stat
-                    ? {
-                        title: current_stat.title,
-                        remediation: current_stat.remediation,
-                        description: current_stat.description,
-                      }
-                    : { title: "", remediation: "", description: "" };
-                })()}
-                onClose={() => {
-                  setSelectedScenarioId(null);
-                  setActiveQuery(null);
-                }}
-              />
-            </div>
-          )}
-          <div
-            className={`w-full shrink-0 bg-white overflow-hidden shadow-sm relative ${isFullGraphView ? "lg:col-span-3" : "lg:col-span-2"}`}
-          >
-            <AzureSecurityGraph width={1100} height={600} data={graphData} />
-
-            {graphData.nodes.length === 0 && (
-              <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                Select a risk card or instance on the left to visualize the
-                attack path
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+        <button
+          type="button"
+          className="navbar-button"
+          onClick={msGraphQuery}
+          disabled={!azureCredential}
+          title={
+            !!azureCredential
+              ? "Call Microsoft Graph API and log result"
+              : "Sign in first"
+          }
+        >
+          AAD Query
+        </button>
+      </main>
     </div>
   );
 }
