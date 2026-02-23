@@ -89,9 +89,5 @@ h1 {
 }
 
 button.navbar-button {
-  @apply text-sm px-3 py-1 bg-white text-black disabled:opacity-50 w-36 hover:bg-gray-100;
-}
-
-button {
-  @apply rounded;
+  @apply text-sm px-3 py-1 bg-white text-black disabled:opacity-50 w-40 hover:bg-gray-100 rounded;
 }
