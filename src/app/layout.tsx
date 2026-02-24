@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Inter } from "next/font/google";
 import { AuthProvider } from "../context/auth_context";
+import { DuckDBProvider } from "../context/db_context";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -22,7 +23,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} antialiased`}>
-        <AuthProvider>{children}</AuthProvider>
+        <DuckDBProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </DuckDBProvider>
       </body>
     </html>
   );
