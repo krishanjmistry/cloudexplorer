@@ -9,6 +9,9 @@ import {
   fetchAzureResources,
   fetchAuthorizationResources,
 } from "../scanner/azure";
+import { containers as localContainers } from "./local/containers";
+import { resources as localResources } from "./local/resources";
+import { authRows as localAuthRows } from "./local/authRows";
 
 async function ensureSchema(conn: duckdb.AsyncDuckDBConnection) {
   await conn.query(
@@ -93,11 +96,13 @@ async function upsertAuthBatchDuck(
 
 export async function runAzureScanDuck(
   db: duckdb.AsyncDuckDB,
-  credential: TokenCredential,
+  credential: TokenCredential | null = null,
 ) {
-  const client = new ResourceGraphClient(credential);
+  // const client = new ResourceGraphClient(credential);
+  // const { containers, resources } = await fetchAzureResources(client);
 
-  const { containers, resources } = await fetchAzureResources(client);
+  const containers = localContainers;
+  const resources = localResources;
 
   const conn = await db.connect();
   try {
@@ -108,7 +113,8 @@ export async function runAzureScanDuck(
     ]);
     console.log(`✅ Upserted ${inserted} resources into DuckDB.`);
 
-    const authRows = await fetchAuthorizationResources(client);
+    // const authRows = await fetchAuthorizationResources(client);
+    const authRows = localAuthRows;
     const authInserted = await upsertAuthBatchDuck(conn, authRows);
     console.log(`🔐 Upserted ${authInserted} authorization rows.`);
 

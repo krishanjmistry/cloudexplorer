@@ -146,10 +146,10 @@ export default function Home() {
           type="button"
           className="navbar-button"
           onClick={async () => {
-            if (!authenticatedUser) {
-              console.warn("not signed in");
-              return;
-            }
+            // if (!authenticatedUser) {
+            //   console.warn("not signed in");
+            //   return;
+            // }
             if (!db) {
               console.warn("DuckDB not initialised yet");
               return;
@@ -158,14 +158,15 @@ export default function Home() {
             try {
               const result = await runAzureScanDuck(
                 db,
-                authenticatedUser.credential,
+                // authenticatedUser.credential,
               );
               console.log("Scan finished", result);
             } catch (err) {
               console.error("Scan failed", err);
             }
           }}
-          disabled={!signedIn || !db}
+          // disabled={!signedIn || !db}
+          disabled={!db}
           title={
             signedIn && db
               ? "Run a full Azure scan and persist into DuckDB"
