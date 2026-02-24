@@ -35,25 +35,24 @@ interface GcpSignInOptions {
 
 interface AuthState {
   signedIn: boolean;
-  provider: Provider | null;
-  user: UserProfile | null;
-  // TODO: change to a common interface
-  credential: TokenCredential | null;
+  authenticatedUser: AuthenticatedUser | null;
   signIn: (opts: SignInOptions) => Promise<void>;
   signOut: () => void;
 }
 
 const AuthContext = createContext<AuthState | undefined>(undefined);
 
+interface AuthenticatedUser {
+  provider: Provider;
+  credential: TokenCredential;
+  profile: UserProfile;
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  // TODO: things will either be null, or have a value, so we can probably calculate some of these things from a single source
-  // i.e. there is one state
-  const [signedIn, setSignedIn] = useState<boolean>(false);
-  const [provider, setProvider] = useState<Provider | null>(null);
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [credential, setCredential] = useState<TokenCredential | null>(null);
+  const [authenticatedUser, setAuthenticatedUser] =
+    useState<AuthenticatedUser | null>(null);
 
   const signIn = async (opts: SignInOptions) => {
     switch (opts.provider) {
@@ -76,10 +75,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         });
         const profile = await graphClient.api("/me").get();
 
-        setCredential(cred);
-        setUser(profile);
-        setProvider("azure");
-        setSignedIn(true);
+        setAuthenticatedUser({
+          provider: "azure",
+          credential: cred,
+          profile,
+        });
+
         return;
       }
       case "aws": {
@@ -100,15 +101,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const signOut = () => {
-    setSignedIn(false);
-    setProvider(null);
-    setUser(null);
-    setCredential(null);
+    setAuthenticatedUser(null);
   };
 
   return (
     <AuthContext.Provider
-      value={{ signedIn, provider, user, credential, signIn, signOut }}
+      value={{
+        signedIn: !!authenticatedUser,
+        authenticatedUser,
+        signIn,
+        signOut,
+      }}
     >
       {children}
     </AuthContext.Provider>

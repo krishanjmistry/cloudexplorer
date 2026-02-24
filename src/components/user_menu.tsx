@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuth } from "../context/auth_context";
 
 export default function UserMenu() {
-  const { user, provider, signedIn, signOut } = useAuth();
+  const { authenticatedUser, signedIn, signOut } = useAuth();
   const [showMenu, setShowMenu] = useState<boolean>(false);
 
   const handleToggle = () => {
@@ -14,9 +14,11 @@ export default function UserMenu() {
     setShowMenu(false);
   };
 
-  if (!signedIn || !user || !provider) {
+  if (!signedIn || !authenticatedUser) {
     return null;
   }
+
+  const { provider, profile: user } = authenticatedUser;
 
   return (
     <div className="relative">

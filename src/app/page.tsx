@@ -24,17 +24,17 @@ export function headers() {
 }
 
 export default function Home() {
-  const { signedIn, credential } = useAuth();
+  const { signedIn, authenticatedUser } = useAuth();
 
   const [showSignIn, setShowSignIn] = useState<boolean>(false);
 
   const resourceGraphQuery = async () => {
     try {
-      if (!credential) {
+      if (!authenticatedUser) {
         console.warn("not signed in yet");
         return;
       }
-      const client = new ResourceGraphClient(credential);
+      const client = new ResourceGraphClient(authenticatedUser.credential);
       client
         .resources({
           query: "resources",
@@ -52,14 +52,14 @@ export default function Home() {
 
   const msGraphQuery = async () => {
     try {
-      if (!credential) {
+      if (!authenticatedUser) {
         console.warn("not signed in yet");
         return;
       }
       const client = GraphClient.initWithMiddleware({
         authProvider: {
           getAccessToken: async () => {
-            const token = await credential.getToken("Directory.Read.All");
+            const token = await authenticatedUser.credential.getToken("Directory.Read.All");
             return token?.token || "";
           },
         },
