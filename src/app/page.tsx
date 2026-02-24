@@ -8,6 +8,10 @@ import { useAuth } from "../context/auth_context";
 import SignInOverlay from "../components/sign_in_overlay";
 import UserMenu from "../components/user_menu";
 
+import { runAzureScanDuck } from "./_lib/duck/scannerDuck";
+import { useDuckDB } from "../context/db_context";
+import DuckQueryConsole from "../components/duck_query_console";
+
 // TODO: verify this actually works
 export function headers() {
   return [
@@ -27,6 +31,8 @@ export default function Home() {
   const { signedIn, authenticatedUser } = useAuth();
 
   const [showSignIn, setShowSignIn] = useState<boolean>(false);
+
+  const { db } = useDuckDB();
 
   const resourceGraphQuery = async () => {
     try {
@@ -59,7 +65,8 @@ export default function Home() {
       const client = GraphClient.initWithMiddleware({
         authProvider: {
           getAccessToken: async () => {
-            const token = await authenticatedUser.credential.getToken("Directory.Read.All");
+            const token =
+              await authenticatedUser.credential.getToken("Directory.Read.All");
             return token?.token || "";
           },
         },
@@ -134,6 +141,41 @@ export default function Home() {
         >
           AAD Query
         </button>
+
+        <button
+          type="button"
+          className="navbar-button"
+          onClick={async () => {
+            if (!authenticatedUser) {
+              console.warn("not signed in");
+              return;
+            }
+            if (!db) {
+              console.warn("DuckDB not initialised yet");
+              return;
+            }
+
+            try {
+              const result = await runAzureScanDuck(
+                db,
+                authenticatedUser.credential,
+              );
+              console.log("Scan finished", result);
+            } catch (err) {
+              console.error("Scan failed", err);
+            }
+          }}
+          disabled={!signedIn || !db}
+          title={
+            signedIn && db
+              ? "Run a full Azure scan and persist into DuckDB"
+              : "Sign in and wait for DuckDB to load"
+          }
+        >
+          Run Azure scan (duckdb)
+        </button>
+
+        <DuckQueryConsole />
       </main>
     </div>
   );

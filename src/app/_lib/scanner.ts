@@ -1,7 +1,11 @@
 import { DefaultAzureCredential } from "@azure/identity";
 import { ResourceGraphClient } from "@azure/arm-resourcegraph";
 import driver from "@/src/utils/db_connection";
-import { AzureResourceRow, RoleDefinitionAssignedRow } from "./scanner/types";
+import {
+  fetchAzureResources,
+  fetchAuthorizationResources,
+} from "./scanner/azure";
+import { AzureResourceRow } from "./scanner/types";
 import { ensureUniqueIdConstraint } from "./scanner/constraints";
 import { upsertResourcesBatch } from "./scanner/resources";
 import { createResourceGroupResourceRelationships } from "./scanner/resourceGroup";
@@ -18,7 +22,7 @@ export async function runAzureScan() {
     containers,
     resources,
   }: { containers: AzureResourceRow[]; resources: AzureResourceRow[] } =
-    await fetchAzureResources();
+    await fetchAzureResources(resourceGraphClient);
 
   const session = driver.session({});
   try {
@@ -84,78 +88,4 @@ export async function runAzureScan() {
   } finally {
     await session.close();
   }
-}
-
-async function fetchAzureResources() {
-  console.log("🚀 Starting Scan...");
-
-  let resources: AzureResourceRow[] = [];
-  let containers: AzureResourceRow[] = [];
-
-  try {
-    const [resR, resC] = await Promise.all([
-      resourceGraphClient.resources({
-        query: "resources",
-        options: { resultFormat: "objectArray" },
-      }),
-      resourceGraphClient.resources({
-        query: "resourcecontainers",
-        options: { resultFormat: "objectArray" },
-      }),
-    ]);
-    resources = resR.data || [];
-    containers = resC.data || [];
-  } catch (err) {
-    console.error("⚠️ Live Resource Graph query failed:", err);
-    resources = [];
-    containers = [];
-  }
-
-  resources = resources.map((r) => ({ ...r, id: String(r.id).toLowerCase() }));
-  containers = containers.map((c) => ({
-    ...c,
-    id: String(c.id).toLowerCase(),
-  }));
-
-  console.log(
-    `📦 Found ${containers.length + resources.length} total items (resources+containers). Importing to Graph DB...`,
-  );
-  return { containers, resources };
-}
-
-async function fetchAuthorizationResources(client: ResourceGraphClient) {
-  const roleAssignmentsWithDefinitionsKql = `
-    authorizationresources
-    | where type == 'microsoft.authorization/roleassignments'
-    | extend
-        roleDefinitionId = tostring(properties.roleDefinitionId),
-        principalId = tostring(properties.principalId),
-        principalType = tostring(properties.principalType),
-        scope = tostring(properties.scope),
-        createdOn = tostring(properties.createdOn)
-    | join kind=leftouter (
-        authorizationresources
-        | where type == 'microsoft.authorization/roledefinitions'
-        | extend
-            rdId = tostring(id),
-            roleName = tostring(properties.roleName),
-            description = tostring(properties.description)
-    ) on $left.roleDefinitionId == $right.rdId
-    | project
-        id,
-        roleDefinitionId = roleDefinitionId,
-        roleDefinitionName = roleName,
-        roleDefinitionDescription = description,
-        principalId,
-        principalType,
-        scope,
-        createdOn
-    `;
-
-  const res = await client.resources({
-    query: roleAssignmentsWithDefinitionsKql,
-    options: { resultFormat: "objectArray" },
-  });
-
-  return res.data as RoleDefinitionAssignedRow[];
 }
