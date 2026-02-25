@@ -13,7 +13,7 @@
   "dependencies": {
     "@azure/arm-resourcegraph": "^4.2.1",
     "@azure/identity": "^4.13.0",
-    "@duckdb/duckdb-wasm": "^1.33.1-dev18.0",
+    "@duckdb/duckdb-wasm": "^1.32.0",
     "@microsoft/microsoft-graph-client": "^3.0.7",
     "d3": "^7.9.0",
     "neo4j-driver": "^6.0.1",
