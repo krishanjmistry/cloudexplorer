@@ -8,9 +8,11 @@ import { useAuth } from "../context/auth_context";
 import SignInOverlay from "../components/sign_in_overlay";
 import UserMenu from "../components/user_menu";
 
-import { runAzureScanDuck } from "./_lib/duck/scannerDuck";
+import { runAzureScanDuck } from "./_lib/duckIngestion/scannerDuck";
 import { useDuckDB } from "../context/db_context";
 import DuckQueryConsole from "../components/duck_query_console";
+import AzureSecurityGraph from "../components/azure_security_graph";
+import { useDuckGraph } from "../hooks/useDuckGraph";
 
 // TODO: verify this actually works
 export function headers() {
@@ -33,6 +35,12 @@ export default function Home() {
   const [showSignIn, setShowSignIn] = useState<boolean>(false);
 
   const { db } = useDuckDB();
+  const {
+    data: graphData,
+    loading: graphLoading,
+    error: graphError,
+    refresh: refreshGraph,
+  } = useDuckGraph(db);
 
   const resourceGraphQuery = async () => {
     try {
@@ -83,7 +91,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center">
+    <div className="min-h-screen w-screen flex flex-col items-center">
       <SignInOverlay
         visible={showSignIn && !signedIn}
         onClose={() => setShowSignIn(false)}
@@ -113,7 +121,7 @@ export default function Home() {
           </div>
         </div>
       </header>
-      <main className="p-4">
+      <main className="p-4 w-full">
         <button
           type="button"
           className="navbar-button"
@@ -146,10 +154,6 @@ export default function Home() {
           type="button"
           className="navbar-button"
           onClick={async () => {
-            // if (!authenticatedUser) {
-            //   console.warn("not signed in");
-            //   return;
-            // }
             if (!db) {
               console.warn("DuckDB not initialised yet");
               return;
@@ -158,14 +162,15 @@ export default function Home() {
             try {
               const result = await runAzureScanDuck(
                 db,
-                // authenticatedUser.credential,
+                authenticatedUser?.credential ?? null,
               );
               console.log("Scan finished", result);
+              // refresh graph after new data lands
+              await refreshGraph();
             } catch (err) {
               console.error("Scan failed", err);
             }
           }}
-          // disabled={!signedIn || !db}
           disabled={!db}
           title={
             signedIn && db
@@ -177,6 +182,20 @@ export default function Home() {
         </button>
 
         <DuckQueryConsole />
+
+        {/* visualisation of current DuckDB contents */}
+        <section className="mt-8 w-full">
+          {graphError && (
+            <div className="text-red-500">
+              Error loading graph: {graphError.message}
+            </div>
+          )}
+          {graphLoading && <div>Loading graph…</div>}
+        </section>
+
+        <div className="w-full">
+          <AzureSecurityGraph height={600} data={graphData} />
+        </div>
       </main>
     </div>
   );

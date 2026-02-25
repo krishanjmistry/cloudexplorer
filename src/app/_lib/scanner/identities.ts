@@ -1,6 +1,7 @@
 import { DefaultAzureCredential } from "@azure/identity";
 import { Client } from "@microsoft/microsoft-graph-client";
 import {
+  AzureResourceRow,
   CHUNK_SIZE,
   Neo4jSession,
   type RoleDefinitionAssignedRow,

@@ -15,7 +15,12 @@ export interface GraphData {
 }
 
 interface AzureSecurityGraphProps {
-  width: number;
+  /**
+   * Initial width to render at.  Once mounted the component measures its
+   * container and adjusts automatically, so this can be omitted or set to
+   * `0` when consumers simply want a responsive graph that fills its parent.
+   */
+  width?: number;
   height: number;
   data: GraphData;
 }
@@ -26,10 +31,14 @@ interface TooltipState {
 }
 
 const AzureSecurityGraph: FC<AzureSecurityGraphProps> = ({
-  width,
+  width = 0,
   height,
   data,
 }) => {
+  // start with the provided width (often zero) but quickly update once the
+  // container is measured.  a zero starting width ensures the svg doesn't
+  // flash unexpectedly large on first render when we don't know the parent
+  // size yet.
   const [measuredWidth, setMeasuredWidth] = useState<number>(width);
   const effectiveHeight = Math.min(measuredWidth, height);
 
