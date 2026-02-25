@@ -89,9 +89,6 @@ export const LinkComponent: FC<LinkProps> = ({
           .join(" • ")
       : "";
 
-  if (detailSummary) {
-    console.log(detailSummary);
-  }
   let linkPath: string;
 
   const adjustedMidpointPosition: Coordinates = {
