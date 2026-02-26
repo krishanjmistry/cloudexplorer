@@ -13,6 +13,8 @@ import { useDuckDB } from "../context/db_context";
 import DuckQueryConsole from "../components/duck_query_console";
 import AzureSecurityGraph from "../components/azure_security_graph";
 import { useDuckGraph } from "../hooks/useDuckGraph";
+import { useStats } from "../hooks/useStats";
+import RiskDashboard from "../components/risk_dashboard";
 
 // TODO: verify this actually works
 export function headers() {
@@ -41,7 +43,7 @@ export default function Home() {
     error: graphError,
     refresh: refreshGraph,
   } = useDuckGraph(db);
-
+  const { stats, statsLoading, statsError, mutateStats } = useStats();
   const resourceGraphQuery = async () => {
     try {
       if (!authenticatedUser) {
@@ -167,6 +169,7 @@ export default function Home() {
               console.log("Scan finished", result);
               // refresh graph after new data lands
               await refreshGraph();
+              await mutateStats();
             } catch (err) {
               console.error("Scan failed", err);
             }
@@ -182,6 +185,17 @@ export default function Home() {
         </button>
 
         <DuckQueryConsole />
+
+        {/* stats / risk dashboard */}
+        <section className="mt-8 w-full">
+          {statsLoading && <div>Loading statistics…</div>}
+          {statsError && (
+            <div className="text-red-500">
+              Error loading stats: {statsError.message}
+            </div>
+          )}
+          {!statsLoading && !statsError && <RiskDashboard stats={stats} />}
+        </section>
 
         {/* visualisation of current DuckDB contents */}
         <section className="mt-8 w-full">

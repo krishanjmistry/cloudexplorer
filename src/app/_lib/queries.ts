@@ -2,8 +2,10 @@ interface Scenario {
   id: string;
   title: string;
   description: string;
-  // the query used to populate the dashboard count
+  // the query used to populate the dashboard count (Cypher for Neo4j)
   countQuery: string;
+  // the query used to populate the dashboard count (SQL for DuckDB)
+  countQuerySql: string;
   // query that returns tabular instance rows for the dashboard table
   instancesQuery: string;
   // focused graph query that accepts $elementId and returns a compact subgraph
@@ -24,12 +26,21 @@ export const SCENARIOS: Record<string, Scenario> = {
     severity: "Critical",
     remediation:
       "Isolate the VM, remove high-privilege identities and patch the vulnerability.",
-    // The "Count" query for the dashboard card
     countQuery: /* cypher */ `
       MATCH (vm:Resource:Compute)-[:HAS_INTERFACE]->(nic:Resource:Network_NIC)-[:ASSOCIATED_PUBLIC_IP]->(pip:Resource:Network_PublicIP)-[:EXPOSES_TO]->(internet:Internet)
       MATCH (vm)-[:HAS_VULNERABILITY]->(cve:Vulnerability {severity: 'Critical'})
       MATCH (vm)-[:HAS_IDENTITY]->(id:Identity)
       RETURN count(DISTINCT vm) as count
+    `,
+    countQuerySql: /* sql */ `
+      SELECT COUNT(DISTINCT vm.uid) AS count
+      FROM resources vm
+      JOIN resource_rel r1 ON r1.from_uid = vm.uid AND r1.reltype = 'HAS_INTERFACE'
+      JOIN resource_rel r2 ON r2.from_uid = r1.to_uid AND r2.reltype = 'ASSOCIATED_PUBLIC_IP'
+      JOIN resource_rel r3 ON r3.from_uid = r2.to_uid AND r3.reltype = 'EXPOSES_TO'
+      JOIN resource_rel r4 ON r4.from_uid = vm.uid AND r4.reltype = 'HAS_VULNERABILITY'
+      JOIN resources vuln ON vuln.uid = r4.to_uid AND vuln.properties LIKE '%"severity":"critical"%'
+      JOIN resource_rel r5 ON r5.from_uid = vm.uid AND r5.reltype = 'HAS_IDENTITY';
     `,
     instancesQuery: /* cypher */ `
       MATCH (vm:Resource:Compute)-[:HAS_INTERFACE]->(nic:Resource:Network_NIC)-[:ASSOCIATED_PUBLIC_IP]->(pip:Resource:Network_PublicIP)-[:EXPOSES_TO]->(internet:Internet)
@@ -81,6 +92,17 @@ export const SCENARIOS: Record<string, Scenario> = {
       MATCH (vm)-[:HAS_IDENTITY]->(:Identity)-[:ASSIGNED]->(:RoleAssignment)-[:ON_RESOURCE]->(:KeyVault)
       RETURN count(DISTINCT vm) as count
     `,
+    countQuerySql: /* sql */ `
+      SELECT COUNT(DISTINCT vm.uid) AS count
+      FROM resources vm
+      JOIN resource_rel r1 ON r1.from_uid = vm.uid AND r1.reltype = 'HAS_INTERFACE'
+      JOIN resource_rel r2 ON r2.from_uid = r1.to_uid AND r2.reltype = 'ASSOCIATED_PUBLIC_IP'
+      JOIN resource_rel r3 ON r3.from_uid = r2.to_uid AND r3.reltype = 'EXPOSES_TO'
+      JOIN resource_rel r4 ON r4.from_uid = vm.uid AND r4.reltype = 'HAS_IDENTITY'
+      JOIN resource_rel r5 ON r5.from_uid = r4.to_uid AND r5.reltype = 'ASSIGNED'
+      JOIN resource_rel r6 ON r6.from_uid = r5.to_uid AND r6.reltype = 'ON_RESOURCE'
+      JOIN resources kv ON kv.uid = r6.to_uid AND kv.type LIKE '%keyvault%';
+    `,
     instancesQuery: /* cypher */ `
       MATCH (vm:Resource:Compute)-[:HAS_INTERFACE]->(nic:Resource:Network_NIC)-[:ASSOCIATED_PUBLIC_IP]->(pip:Resource:Network_PublicIP)-[:EXPOSES_TO]->(internet:Internet)
       MATCH srcPermissionsOnKeyVault = (vm)-[:HAS_IDENTITY]->(id:Identity)-[:ASSIGNED]->(ra:RoleAssignment)-[:ON_RESOURCE]->(kv:KeyVault)
@@ -119,6 +141,15 @@ export const SCENARIOS: Record<string, Scenario> = {
       WHERE (sub:Subscription)
         AND ra.roleDefinitionName IN ['Owner', 'Contributor']
       RETURN count(DISTINCT [id, sub, ra]) as count
+    `,
+    countQuerySql: /* sql */ `
+      SELECT COUNT(DISTINCT id.uid || '-' || ra.uid || '-' || sub.uid) AS count
+      FROM resources id
+      JOIN resource_rel r1 ON r1.from_uid = id.uid AND r1.reltype = 'ASSIGNED'
+      JOIN resources ra ON ra.uid = r1.to_uid AND ra.type = 'roleassignment'
+      JOIN resource_rel r2 ON r2.from_uid = ra.uid AND r2.reltype = 'ON_RESOURCE'
+      JOIN resources sub ON sub.uid = r2.to_uid AND sub.type = 'microsoft.resources/subscriptions'
+      WHERE ra.properties LIKE '%"roleDefinitionName":"Owner"%' OR ra.properties LIKE '%"roleDefinitionName":"Contributor"%';
     `,
     instancesQuery: /* cypher */ `
       MATCH (id:Identity)-[:ASSIGNED]->(ra:RoleAssignment)-[:ON_RESOURCE]->(sub:AzureResource)
@@ -161,6 +192,17 @@ export const SCENARIOS: Record<string, Scenario> = {
       WHERE v.severity IN ['Critical','High'] AND v.status = 'Unpatched' AND v.published_date < date() - duration({days:90})
       RETURN count(DISTINCT vm) as count
     `,
+    countQuerySql: /* sql */ `
+      SELECT COUNT(DISTINCT vm.uid) AS count
+      FROM resources vm
+      JOIN resource_rel r1 ON r1.from_uid = vm.uid AND r1.reltype = 'HAS_INTERFACE'
+      JOIN resource_rel r2 ON r2.from_uid = r1.to_uid AND r2.reltype = 'ASSOCIATED_PUBLIC_IP'
+      JOIN resource_rel r3 ON r3.from_uid = r2.to_uid AND r3.reltype = 'EXPOSES_TO'
+      JOIN resource_rel r4 ON r4.from_uid = vm.uid AND r4.reltype = 'HAS_VULNERABILITY'
+      JOIN resources v ON v.uid = r4.to_uid
+      WHERE (v.properties LIKE '%"severity":"critical"%' OR v.properties LIKE '%"severity":"high"%')
+        AND v.properties LIKE '%"status":"Unpatched"%';
+    `,
     instancesQuery: /* cypher */ `
       MATCH (vm:Resource:Compute)-[:HAS_INTERFACE]->(nic:Resource:Network_NIC)-[:ASSOCIATED_PUBLIC_IP]->(pip:Resource:Network_PublicIP)-[:EXPOSES_TO]->(internet:Internet)
       MATCH (vm)-[r4]->(v:Vulnerability)
@@ -197,6 +239,19 @@ export const SCENARIOS: Record<string, Scenario> = {
       MATCH (src)-[:HAS_IDENTITY]->(id:Identity)-[:ASSIGNED]->(ra:RoleAssignment)-[:ON_RESOURCE]->(target)
       WHERE target:Subscription OR target:ResourceGroup OR target:KeyVault OR target:Database OR target:StorageAccount
       RETURN count(DISTINCT [src,target,id]) as count
+    `,
+    countQuerySql: /* sql */ `
+      SELECT COUNT(DISTINCT src.uid || '-' || tgt.uid || '-' || id.uid) AS count
+      FROM resources src
+      JOIN resource_rel r1 ON r1.from_uid = src.uid AND r1.reltype = 'HAS_INTERFACE'
+      JOIN resource_rel r2 ON r2.from_uid = r1.to_uid AND r2.reltype = 'ASSOCIATED_PUBLIC_IP'
+      JOIN resource_rel r3 ON r3.from_uid = r2.to_uid AND r3.reltype = 'EXPOSES_TO'
+      JOIN resource_rel r4 ON r4.from_uid = src.uid AND r4.reltype = 'HAS_IDENTITY'
+      JOIN resource_rel r5 ON r5.from_uid = r4.to_uid AND r5.reltype = 'ASSIGNED'
+      JOIN resource_rel r6 ON r6.from_uid = r5.to_uid AND r6.reltype = 'ON_RESOURCE'
+      JOIN resources tgt ON tgt.uid = r6.to_uid
+      JOIN resources id ON id.uid = r4.to_uid AND id.type = 'identity'
+      WHERE tgt.type LIKE '%subscription%' OR tgt.type LIKE '%resourcegroups%' OR tgt.type LIKE '%keyvault%' OR tgt.type LIKE '%database%' OR tgt.type LIKE '%storageaccounts%';
     `,
     instancesQuery: /* cypher */ `
       MATCH (vm:Resource:Compute)-[:HAS_INTERFACE]->(nic:Resource:Network_NIC)-[:ASSOCIATED_PUBLIC_IP]->(pip:Resource:Network_PublicIP)-[:EXPOSES_TO]->(internet:Internet)
