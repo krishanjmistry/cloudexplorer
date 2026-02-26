@@ -14,6 +14,15 @@ interface Scenario {
   focusedQuery: string;
   // the graph query used for visualization of the full graph
   graphQuery: string;
+  // SQL versions to execute against the DuckDB warehouse.  We maintain
+  // separate statements for nodes and links but the client will automatically
+  // combine them into a single UNION query so that a single round‑trip returns
+  // both sets with an extra `__type` column.  Parameters must be positional
+  // (`?`) because prepared statements currently don't support named binding.
+  focusedQuerySql?: string;
+  focusedQuerySqlLinks?: string;
+  graphQuerySql?: string;
+  graphQuerySqlLinks?: string;
   // risk metadata used by the UI
   severity: "Critical" | "High" | "Medium" | "Low";
   remediation: string;
@@ -96,6 +105,82 @@ export const SCENARIOS: Record<string, Scenario> = {
       RETURN nodes(publicInternetToVM) + nodes(vmVuln) + nodes(vmScope) AS nodes,
         relationships(publicInternetToVM) + relationships(vmVuln) + relationships(vmScope) AS rels
     `,
+    graphQuerySql: /* sql */ `
+      -- nodes involved in the toxic combination pattern
+      WITH vmInternet AS (
+        SELECT
+          vm.uid AS vm,
+          nic.uid AS nic,
+          pip.uid AS pip,
+          internet.uid AS internet,
+          vuln.uid AS vuln,
+          id.uid AS identity,
+          scope.uid AS scope
+        FROM resources vm
+        JOIN resource_rel r1 ON r1.from_uid = vm.uid AND r1.reltype = 'HAS_INTERFACE'
+        JOIN resources nic ON nic.uid = r1.to_uid
+        JOIN resource_rel r2 ON r2.from_uid = nic.uid AND r2.reltype = 'ASSOCIATED_PUBLIC_IP'
+        JOIN resources pip ON pip.uid = r2.to_uid
+        JOIN resource_rel r3 ON r3.from_uid = pip.uid AND r3.reltype = 'EXPOSES_TO'
+        JOIN resources internet ON internet.uid = r3.to_uid
+        JOIN resource_rel r4 ON r4.from_uid = vm.uid AND r4.reltype = 'HAS_VULNERABILITY'
+        JOIN resources vuln ON vuln.uid = r4.to_uid AND vuln.properties LIKE '%"severity":"critical"%'
+        JOIN resource_rel r5 ON r5.from_uid = vm.uid AND r5.reltype = 'HAS_IDENTITY'
+        JOIN resources id ON id.uid = r5.to_uid
+        JOIN resource_rel r6 ON r6.from_uid = id.uid AND r6.reltype = 'ASSIGNED'
+        JOIN resources scope ON scope.uid = r6.to_uid
+      ),
+      base_nodes AS (
+        SELECT vm AS uid FROM vmInternet
+        UNION SELECT nic FROM vmInternet
+        UNION SELECT pip FROM vmInternet
+        UNION SELECT internet FROM vmInternet
+        UNION SELECT vuln FROM vmInternet
+        UNION SELECT identity AS uid FROM vmInternet
+        UNION SELECT scope AS uid FROM vmInternet
+      )
+      SELECT *
+      FROM resources
+      WHERE uid IN (SELECT uid FROM base_nodes);
+    `,
+    graphQuerySqlLinks: /* sql */ `
+      WITH vmInternet AS (
+        SELECT
+          vm.uid AS vm,
+          nic.uid AS nic,
+          pip.uid AS pip,
+          internet.uid AS internet,
+          vuln.uid AS vuln,
+          id.uid AS identity,
+          scope.uid AS scope
+        FROM resources vm
+        JOIN resource_rel r1 ON r1.from_uid = vm.uid AND r1.reltype = 'HAS_INTERFACE'
+        JOIN resources nic ON nic.uid = r1.to_uid
+        JOIN resource_rel r2 ON r2.from_uid = nic.uid AND r2.reltype = 'ASSOCIATED_PUBLIC_IP'
+        JOIN resources pip ON pip.uid = r2.to_uid
+        JOIN resource_rel r3 ON r3.from_uid = pip.uid AND r3.reltype = 'EXPOSES_TO'
+        JOIN resources internet ON internet.uid = r3.to_uid
+        JOIN resource_rel r4 ON r4.from_uid = vm.uid AND r4.reltype = 'HAS_VULNERABILITY'
+        JOIN resources vuln ON vuln.uid = r4.to_uid AND vuln.properties LIKE '%"severity":"critical"%'
+        JOIN resource_rel r5 ON r5.from_uid = vm.uid AND r5.reltype = 'HAS_IDENTITY'
+        JOIN resources id ON id.uid = r5.to_uid
+        JOIN resource_rel r6 ON r6.from_uid = id.uid AND r6.reltype = 'ASSIGNED'
+        JOIN resources scope ON scope.uid = r6.to_uid
+      ),
+      base_nodes AS (
+        SELECT vm AS uid FROM vmInternet
+        UNION SELECT nic FROM vmInternet
+        UNION SELECT pip FROM vmInternet
+        UNION SELECT internet FROM vmInternet
+        UNION SELECT vuln FROM vmInternet
+        UNION SELECT identity AS uid FROM vmInternet
+        UNION SELECT scope AS uid from vmInternet
+      )
+      SELECT *
+      FROM resource_rel
+      WHERE from_uid IN (SELECT uid FROM base_nodes)
+        AND to_uid IN (SELECT uid FROM base_nodes);
+    `,
   },
   DATA_EXFIL: {
     id: "DATA_EXFIL",
@@ -162,6 +247,81 @@ export const SCENARIOS: Record<string, Scenario> = {
       RETURN nodes(srcReachesInternet) + nodes(srcPermissionsOnKeyVault) AS nodes,
         relationships(srcReachesInternet) + relationships(srcPermissionsOnKeyVault) AS rels
     `,
+    graphQuerySql: /* sql */ `
+      WITH srcInternet AS (
+        SELECT
+          src.uid AS src,
+          nic.uid AS nic,
+          pip.uid AS pip,
+          internet.uid AS internet,
+          id.uid AS identity,
+          ra.uid AS role,
+          kv.uid AS keyvault
+        FROM resources src
+        JOIN resource_rel r1 ON r1.from_uid = src.uid AND r1.reltype = 'HAS_INTERFACE'
+        JOIN resources nic ON nic.uid = r1.to_uid
+        JOIN resource_rel r2 ON r2.from_uid = nic.uid AND r2.reltype = 'ASSOCIATED_PUBLIC_IP'
+        JOIN resources pip ON pip.uid = r2.to_uid
+        JOIN resource_rel r3 ON r3.from_uid = pip.uid AND r3.reltype = 'EXPOSES_TO'
+        JOIN resources internet ON internet.uid = r3.to_uid
+        JOIN resource_rel r4 ON r4.from_uid = src.uid AND r4.reltype = 'HAS_IDENTITY'
+        JOIN resources id ON id.uid = r4.to_uid
+        JOIN resource_rel r5 ON r5.from_uid = id.uid AND r5.reltype = 'ASSIGNED'
+        JOIN resources ra ON ra.uid = r5.to_uid AND ra.type = 'roleassignment'
+        JOIN resource_rel r6 ON r6.from_uid = ra.uid AND r6.reltype = 'ON_RESOURCE'
+        JOIN resources kv ON kv.uid = r6.to_uid AND kv.type LIKE '%keyvault%'
+      ),
+      base_nodes AS (
+        SELECT src AS uid FROM srcInternet
+        UNION SELECT nic FROM srcInternet
+        UNION SELECT pip FROM srcInternet
+        UNION SELECT internet FROM srcInternet
+        UNION SELECT identity AS uid FROM srcInternet
+        UNION SELECT role AS uid FROM srcInternet
+        UNION SELECT keyvault AS uid FROM srcInternet
+      )
+      SELECT *
+      FROM resources
+      WHERE uid IN (SELECT uid FROM base_nodes);
+    `,
+    graphQuerySqlLinks: /* sql */ `
+      WITH srcInternet AS (
+        SELECT
+          src.uid AS src,
+          nic.uid AS nic,
+          pip.uid AS pip,
+          internet.uid AS internet,
+          id.uid AS identity,
+          ra.uid AS role,
+          kv.uid AS keyvault
+        FROM resources src
+        JOIN resource_rel r1 ON r1.from_uid = src.uid AND r1.reltype = 'HAS_INTERFACE'
+        JOIN resources nic ON nic.uid = r1.to_uid
+        JOIN resource_rel r2 ON r2.from_uid = nic.uid AND r2.reltype = 'ASSOCIATED_PUBLIC_IP'
+        JOIN resources pip ON pip.uid = r2.to_uid
+        JOIN resource_rel r3 ON r3.from_uid = pip.uid AND r3.reltype = 'EXPOSES_TO'
+        JOIN resources internet ON internet.uid = r3.to_uid
+        JOIN resource_rel r4 ON r4.from_uid = src.uid AND r4.reltype = 'HAS_IDENTITY'
+        JOIN resources id ON id.uid = r4.to_uid
+        JOIN resource_rel r5 ON r5.from_uid = id.uid AND r5.reltype = 'ASSIGNED'
+        JOIN resources ra ON ra.uid = r5.to_uid AND ra.type = 'roleassignment'
+        JOIN resource_rel r6 ON r6.from_uid = ra.uid AND r6.reltype = 'ON_RESOURCE'
+        JOIN resources kv ON kv.uid = r6.to_uid AND kv.type LIKE '%keyvault%'
+      ),
+      base_nodes AS (
+        SELECT src AS uid FROM srcInternet
+        UNION SELECT nic FROM srcInternet
+        UNION SELECT pip FROM srcInternet
+        UNION SELECT internet FROM srcInternet
+        UNION SELECT identity AS uid FROM srcInternet
+        UNION SELECT role AS uid FROM srcInternet
+        UNION SELECT keyvault AS uid FROM srcInternet
+      )
+      SELECT *
+      FROM resource_rel
+      WHERE from_uid IN (SELECT uid FROM base_nodes)
+        AND to_uid IN (SELECT uid FROM base_nodes);
+    `,
   },
   IDENTITY_RISK: {
     id: "IDENTITY_RISK",
@@ -224,6 +384,90 @@ export const SCENARIOS: Record<string, Scenario> = {
       OPTIONAL MATCH connectedCompute = (vm:Resource:Compute)-->(id)
       RETURN nodes(paths), relationships(paths), nodes(connectedCompute), relationships(connectedCompute)
     `,
+    graphQuerySql: /* sql */ `
+      WITH idPaths AS (
+        SELECT
+          id.uid AS id,
+          ra.uid AS role,
+          sub.uid AS subscription,
+          vm.uid AS compute
+        FROM resources id
+        JOIN resource_rel r1 ON r1.from_uid = id.uid AND r1.reltype = 'ASSIGNED'
+        JOIN resources ra ON ra.uid = r1.to_uid AND ra.type = 'roleassignment'
+        JOIN resource_rel r2 ON r2.from_uid = ra.uid AND r2.reltype = 'ON_RESOURCE'
+        JOIN resources sub ON sub.uid = r2.to_uid AND sub.type = 'microsoft.resources/subscriptions'
+        LEFT JOIN resource_rel r3 ON r3.to_uid = id.uid AND r3.reltype = 'HAS_IDENTITY'
+        LEFT JOIN resources vm ON vm.uid = r3.from_uid
+        WHERE ra.properties LIKE '%"roleDefinitionName":"Owner"%' OR ra.properties LIKE '%"roleDefinitionName":"Contributor"%'
+      ),
+      base_nodes AS (
+        SELECT id AS uid FROM idPaths
+        UNION SELECT role AS uid FROM idPaths
+        UNION SELECT subscription AS uid FROM idPaths
+        UNION SELECT compute AS uid FROM idPaths WHERE compute IS NOT NULL
+      )
+      SELECT * FROM resources WHERE uid IN (SELECT uid FROM base_nodes);
+    `,
+    graphQuerySqlLinks: /* sql */ `
+      WITH idPaths AS (
+        SELECT
+          id.uid AS id,
+          ra.uid AS role,
+          sub.uid AS subscription,
+          vm.uid AS compute
+        FROM resources id
+        JOIN resource_rel r1 ON r1.from_uid = id.uid AND r1.reltype = 'ASSIGNED'
+        JOIN resources ra ON ra.uid = r1.to_uid AND ra.type = 'roleassignment'
+        JOIN resource_rel r2 ON r2.from_uid = ra.uid AND r2.reltype = 'ON_RESOURCE'
+        JOIN resources sub ON sub.uid = r2.to_uid AND sub.type = 'microsoft.resources/subscriptions'
+        LEFT JOIN resource_rel r3 ON r3.to_uid = id.uid AND r3.reltype = 'HAS_IDENTITY'
+        LEFT JOIN resources vm ON vm.uid = r3.from_uid
+        WHERE ra.properties LIKE '%"roleDefinitionName":"Owner"%' OR ra.properties LIKE '%"roleDefinitionName":"Contributor"%'
+      ),
+      base_nodes AS (
+        SELECT id AS uid FROM idPaths
+        UNION SELECT role AS uid FROM idPaths
+        UNION SELECT subscription AS uid FROM idPaths
+        UNION SELECT compute AS uid FROM idPaths WHERE compute IS NOT NULL
+      )
+      SELECT *
+      FROM resource_rel
+      WHERE from_uid IN (SELECT uid FROM base_nodes)
+        AND to_uid IN (SELECT uid FROM base_nodes);
+    `,
+    focusedQuerySql: /* sql */ `
+      WITH focus AS (
+        SELECT uid FROM resources WHERE uid = $elementId
+      ),
+      neighbors AS (
+        SELECT from_uid AS uid FROM resource_rel WHERE to_uid = $elementId
+        UNION
+        SELECT to_uid AS uid FROM resource_rel WHERE from_uid = $elementId
+      ),
+      base_nodes AS (
+        SELECT uid FROM focus
+        UNION SELECT uid FROM neighbors
+      )
+      SELECT * FROM resources WHERE uid IN (SELECT uid FROM base_nodes);
+    `,
+    focusedQuerySqlLinks: /* sql */ `
+      WITH focus AS (
+        SELECT uid FROM resources WHERE uid = $elementId
+      ),
+      neighbors AS (
+        SELECT from_uid AS uid FROM resource_rel WHERE to_uid = $elementId
+        UNION
+        SELECT to_uid AS uid FROM resource_rel WHERE from_uid = $elementId
+      ),
+      base_nodes AS (
+        SELECT uid FROM focus
+        UNION SELECT uid FROM neighbors
+      )
+      SELECT *
+      FROM resource_rel
+      WHERE from_uid IN (SELECT uid FROM base_nodes)
+        AND to_uid IN (SELECT uid FROM base_nodes);
+    `,
   },
 
   UNPATCHED_HIGH_RISK: {
@@ -284,6 +528,102 @@ export const SCENARIOS: Record<string, Scenario> = {
       MATCH (vm)-[r4]->(v:Vulnerability)
       WHERE v.severity IN ['Critical','High'] AND v.status = 'Unpatched' AND v.published_date < date() - duration({days:90})
       RETURN internet, pip, nic, vm, v, r4
+    `,
+    graphQuerySql: /* sql */ `
+      WITH vmData AS (
+        SELECT
+          vm.uid AS vm,
+          nic.uid AS nic,
+          pip.uid AS pip,
+          internet.uid AS internet,
+          v.uid AS vuln
+        FROM resources vm
+        JOIN resource_rel r1 ON r1.from_uid = vm.uid AND r1.reltype = 'HAS_INTERFACE'
+        JOIN resources nic ON nic.uid = r1.to_uid
+        JOIN resource_rel r2 ON r2.from_uid = nic.uid AND r2.reltype = 'ASSOCIATED_PUBLIC_IP'
+        JOIN resources pip ON pip.uid = r2.to_uid
+        JOIN resource_rel r3 ON r3.from_uid = pip.uid AND r3.reltype = 'EXPOSES_TO'
+        JOIN resources internet ON internet.uid = r3.to_uid
+        JOIN resource_rel r4 ON r4.from_uid = vm.uid AND r4.reltype = 'HAS_VULNERABILITY'
+        JOIN resources v ON v.uid = r4.to_uid
+        WHERE (v.properties LIKE '%"severity":"critical"%' OR v.properties LIKE '%"severity":"high"%')
+          AND v.properties LIKE '%"status":"Unpatched"%'
+      ),
+      base_nodes AS (
+        SELECT vm AS uid FROM vmData
+        UNION SELECT nic FROM vmData
+        UNION SELECT pip FROM vmData
+        UNION SELECT internet FROM vmData
+        UNION SELECT vuln AS uid FROM vmData
+      )
+      SELECT *
+      FROM resources
+      WHERE uid IN (SELECT uid FROM base_nodes);
+    `,
+    graphQuerySqlLinks: /* sql */ `
+      WITH vmData AS (
+        SELECT
+          vm.uid AS vm,
+          nic.uid AS nic,
+          pip.uid AS pip,
+          internet.uid AS internet,
+          v.uid AS vuln
+        FROM resources vm
+        JOIN resource_rel r1 ON r1.from_uid = vm.uid AND r1.reltype = 'HAS_INTERFACE'
+        JOIN resources nic ON nic.uid = r1.to_uid
+        JOIN resource_rel r2 ON r2.from_uid = nic.uid AND r2.reltype = 'ASSOCIATED_PUBLIC_IP'
+        JOIN resources pip ON pip.uid = r2.to_uid
+        JOIN resource_rel r3 ON r3.from_uid = pip.uid AND r3.reltype = 'EXPOSES_TO'
+        JOIN resources internet ON internet.uid = r3.to_uid
+        JOIN resource_rel r4 ON r4.from_uid = vm.uid AND r4.reltype = 'HAS_VULNERABILITY'
+        JOIN resources v ON v.uid = r4.to_uid
+        WHERE (v.properties LIKE '%"severity":"critical"%' OR v.properties LIKE '%"severity":"high"%')
+          AND v.properties LIKE '%"status":"Unpatched"%'
+      ),
+      base_nodes AS (
+        SELECT vm AS uid FROM vmData
+        UNION SELECT nic FROM vmData
+        UNION SELECT pip FROM vmData
+        UNION SELECT internet FROM vmData
+        UNION SELECT vuln AS uid FROM vmData
+      )
+      SELECT *
+      FROM resource_rel
+      WHERE from_uid IN (SELECT uid FROM base_nodes)
+        AND to_uid IN (SELECT uid FROM base_nodes);
+    `,
+    focusedQuerySql: /* sql */ `
+      WITH focus AS (
+        SELECT uid FROM resources WHERE uid = $elementId
+      ),
+      neighbors AS (
+        SELECT from_uid AS uid FROM resource_rel WHERE to_uid = $elementId
+        UNION
+        SELECT to_uid AS uid FROM resource_rel WHERE from_uid = $elementId
+      ),
+      base_nodes AS (
+        SELECT uid FROM focus
+        UNION SELECT uid FROM neighbors
+      )
+      SELECT * FROM resources WHERE uid IN (SELECT uid FROM base_nodes);
+    `,
+    focusedQuerySqlLinks: /* sql */ `
+      WITH focus AS (
+        SELECT uid FROM resources WHERE uid = $elementId
+      ),
+      neighbors AS (
+        SELECT from_uid AS uid FROM resource_rel WHERE to_uid = $elementId
+        UNION
+        SELECT to_uid AS uid FROM resource_rel WHERE from_uid = $elementId
+      ),
+      base_nodes AS (
+        SELECT uid FROM focus
+        UNION SELECT uid FROM neighbors
+      )
+      SELECT *
+      FROM resource_rel
+      WHERE from_uid IN (SELECT uid FROM base_nodes)
+        AND to_uid IN (SELECT uid FROM base_nodes);
     `,
   },
 
@@ -359,6 +699,60 @@ export const SCENARIOS: Record<string, Scenario> = {
       MATCH (target) WHERE target:KeyVault OR target:Database OR target:Subscription
       MATCH p = shortestPath((src)-[*..5]->(target))
       RETURN nodes(p), relationships(p), nodes(srcReachesInternet), relationships(srcReachesInternet)
+    `,
+    graphQuerySql: /* sql */ `
+      -- include internet‑facing compute and the sensitive targets defined by the
+      -- scenario.  We don't attempt to traverse full paths; the client can still
+      -- draw edges between these nodes if they share a relationship.
+      WITH srcInternet AS (
+        SELECT src.uid AS src
+        FROM resources src
+        JOIN resource_rel r1 ON r1.from_uid = src.uid AND r1.reltype = 'HAS_INTERFACE'
+        JOIN resource_rel r2 ON r2.from_uid = r1.to_uid AND r2.reltype = 'ASSOCIATED_PUBLIC_IP'
+        JOIN resource_rel r3 ON r3.from_uid = r2.to_uid AND r3.reltype = 'EXPOSES_TO'
+      ),
+      targets AS (
+        SELECT tgt.uid AS uid
+        FROM resources tgt
+        WHERE tgt.type LIKE '%subscription%'
+           OR tgt.type LIKE '%resourcegroups%'
+           OR tgt.type LIKE '%keyvault%'
+           OR tgt.type LIKE '%database%'
+           OR tgt.type LIKE '%storageaccounts%'
+      ),
+      base_nodes AS (
+        SELECT src AS uid FROM srcInternet
+        UNION SELECT uid FROM targets
+      )
+      SELECT *
+      FROM resources
+      WHERE uid IN (SELECT uid FROM base_nodes);
+    `,
+    graphQuerySqlLinks: /* sql */ `
+      WITH srcInternet AS (
+        SELECT src.uid AS src
+        FROM resources src
+        JOIN resource_rel r1 ON r1.from_uid = src.uid AND r1.reltype = 'HAS_INTERFACE'
+        JOIN resource_rel r2 ON r2.from_uid = r1.to_uid AND r2.reltype = 'ASSOCIATED_PUBLIC_IP'
+        JOIN resource_rel r3 ON r3.from_uid = r2.to_uid AND r3.reltype = 'EXPOSES_TO'
+      ),
+      targets AS (
+        SELECT tgt.uid AS uid
+        FROM resources tgt
+        WHERE tgt.type LIKE '%subscription%'
+           OR tgt.type LIKE '%resourcegroups%'
+           OR tgt.type LIKE '%keyvault%'
+           OR tgt.type LIKE '%database%'
+           OR tgt.type LIKE '%storageaccounts%'
+      ),
+      base_nodes AS (
+        SELECT src AS uid FROM srcInternet
+        UNION SELECT uid FROM targets
+      )
+      SELECT *
+      FROM resource_rel
+      WHERE from_uid IN (SELECT uid FROM base_nodes)
+        AND to_uid IN (SELECT uid FROM base_nodes);
     `,
   },
 };
