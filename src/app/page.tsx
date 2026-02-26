@@ -1,7 +1,5 @@
 "use client";
 import { useState, useEffect } from "react";
-import { ResourceGraphClient } from "@azure/arm-resourcegraph";
-import { Client as GraphClient } from "@microsoft/microsoft-graph-client";
 
 import CloudIcon from "../components/cloud_icon";
 import { useAuth } from "../context/auth_context";
@@ -62,54 +60,6 @@ export default function Home() {
       window.removeEventListener(CardScenarioClickEvent.eventName, handler);
   }, []);
 
-  const resourceGraphQuery = async () => {
-    try {
-      if (!authenticatedUser) {
-        console.warn("not signed in yet");
-        return;
-      }
-      const client = new ResourceGraphClient(authenticatedUser.credential);
-      client
-        .resources({
-          query: "resources",
-        })
-        .then((response) => {
-          console.log("Azure Resource Graph response", response);
-        })
-        .catch((err) => {
-          console.error("Azure Resource Graph query failed", err);
-        });
-    } catch (e) {
-      console.error("Azure call failed", e);
-    }
-  };
-
-  const msGraphQuery = async () => {
-    try {
-      if (!authenticatedUser) {
-        console.warn("not signed in yet");
-        return;
-      }
-      const client = GraphClient.initWithMiddleware({
-        authProvider: {
-          getAccessToken: async () => {
-            const token =
-              await authenticatedUser.credential.getToken("Directory.Read.All");
-            return token?.token || "";
-          },
-        },
-      });
-
-      const users = await client.api("/directoryObjects/getByIds").post({
-        ids: ["00000002-0000-0000-c000-000000000000"],
-        types: ["User", "ServicePrincipal", "Group", "Application"],
-      });
-      console.log("Microsoft Graph /directoryObjects/getByIds response", users);
-    } catch (e) {
-      console.error("Microsoft Graph call failed", e);
-    }
-  };
-
   return (
     <div className="min-h-screen w-screen flex flex-col items-center">
       <SignInOverlay
@@ -125,6 +75,38 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-6">
+            <button
+              type="button"
+              className="navbar-button"
+              onClick={async () => {
+                if (!db) {
+                  console.warn("DuckDB not initialised yet");
+                  return;
+                }
+
+                try {
+                  const result = await runAzureScanDuck(
+                    db,
+                    authenticatedUser?.credential ?? null,
+                  );
+                  console.log("Scan finished", result);
+                  // refresh graph after new data lands
+                  await refreshGraph();
+                  await mutateStats();
+                  setGlobalRefreshKey((k) => k + 1);
+                } catch (err) {
+                  console.error("Scan failed", err);
+                }
+              }}
+              disabled={!db}
+              title={
+                signedIn && db
+                  ? "Run a full Azure scan and persist into DuckDB"
+                  : "Sign in and wait for DuckDB to load"
+              }
+            >
+              Run Azure scan (duckdb)
+            </button>
             <div className="flex items-center gap-3">
               {signedIn ? (
                 <UserMenu />
@@ -142,71 +124,8 @@ export default function Home() {
         </div>
       </header>
       <main className="p-4 w-full">
-        <button
-          type="button"
-          className="navbar-button"
-          onClick={resourceGraphQuery}
-          disabled={!signedIn}
-          title={
-            signedIn
-              ? "Call Azure Management API and log result"
-              : "Sign in first"
-          }
-        >
-          Resource Graph Query
-        </button>
-
-        <button
-          type="button"
-          className="navbar-button"
-          onClick={msGraphQuery}
-          disabled={!signedIn}
-          title={
-            signedIn
-              ? "Call Microsoft Graph API and log result"
-              : "Sign in first"
-          }
-        >
-          AAD Query
-        </button>
-
-        <button
-          type="button"
-          className="navbar-button"
-          onClick={async () => {
-            if (!db) {
-              console.warn("DuckDB not initialised yet");
-              return;
-            }
-
-            try {
-              const result = await runAzureScanDuck(
-                db,
-                authenticatedUser?.credential ?? null,
-              );
-              console.log("Scan finished", result);
-              // refresh graph after new data lands
-              await refreshGraph();
-              await mutateStats();
-              setGlobalRefreshKey((k) => k + 1);
-            } catch (err) {
-              console.error("Scan failed", err);
-            }
-          }}
-          disabled={!db}
-          title={
-            signedIn && db
-              ? "Run a full Azure scan and persist into DuckDB"
-              : "Sign in and wait for DuckDB to load"
-          }
-        >
-          Run Azure scan (duckdb)
-        </button>
-
-        <DuckQueryConsole />
-
         {/* stats / risk dashboard */}
-        <section className="mt-8 w-full">
+        <section className="w-full">
           {statsLoading && <div>Loading statistics…</div>}
           {statsError && (
             <div className="text-red-500">
@@ -217,7 +136,7 @@ export default function Home() {
         </section>
 
         {/* instances panel + visualization grid */}
-        <div className="mt-8 w-full max-w-full grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+        <div className="mt-8 w-full max-w-full grid grid-cols-1 lg:grid-cols-3 gap-y-6 lg:gap-6 items-stretch">
           {selectedScenarioId && (
             <div className="w-full overflow-y-scroll h-full max-h-[600px]">
               <InstancesPanel
@@ -250,6 +169,9 @@ export default function Home() {
             {graphLoading && <div>Loading graph…</div>}
             <AzureSecurityGraph height={600} data={graphData} />
           </div>
+        </div>
+        <div className="mt-8">
+          <DuckQueryConsole />
         </div>
       </main>
     </div>
