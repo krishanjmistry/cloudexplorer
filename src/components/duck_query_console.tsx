@@ -66,7 +66,11 @@ export default function DuckQueryConsole() {
 
       {result && (
         <pre className="bg-gray-100 p-4 rounded text-sm overflow-x-scroll">
-          {JSON.stringify(result, null, 2)}
+          {JSON.stringify(
+            result,
+            (_, value) => (typeof value === "bigint" ? Number(value) : value),
+            2,
+          )}
         </pre>
       )}
     </section>
