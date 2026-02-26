@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ResourceGraphClient } from "@azure/arm-resourcegraph";
 import { Client as GraphClient } from "@microsoft/microsoft-graph-client";
 
@@ -14,7 +14,10 @@ import DuckQueryConsole from "../components/duck_query_console";
 import AzureSecurityGraph from "../components/azure_security_graph";
 import { useDuckGraph } from "../hooks/useDuckGraph";
 import { useStats } from "../hooks/useStats";
-import RiskDashboard from "../components/risk_dashboard";
+import RiskDashboard, {
+  CardScenarioClickEvent,
+} from "../components/risk_dashboard";
+import InstancesPanel from "../components/instances_panel";
 
 // TODO: verify this actually works
 export function headers() {
@@ -33,17 +36,32 @@ export function headers() {
 
 export default function Home() {
   const { signedIn, authenticatedUser } = useAuth();
-
   const [showSignIn, setShowSignIn] = useState<boolean>(false);
-
   const { db } = useDuckDB();
+  const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(
+    null,
+  );
+  const [globalRefreshKey, setGlobalRefreshKey] = useState(0);
+  const { stats, statsLoading, statsError, mutateStats } = useStats();
+
   const {
     data: graphData,
     loading: graphLoading,
     error: graphError,
     refresh: refreshGraph,
   } = useDuckGraph(db);
-  const { stats, statsLoading, statsError, mutateStats } = useStats();
+
+  // respond to risk dashboard card clicks
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const evt = e as CardScenarioClickEvent;
+      setSelectedScenarioId(evt.scenarioId);
+    };
+    window.addEventListener(CardScenarioClickEvent.eventName, handler);
+    return () =>
+      window.removeEventListener(CardScenarioClickEvent.eventName, handler);
+  }, []);
+
   const resourceGraphQuery = async () => {
     try {
       if (!authenticatedUser) {
@@ -170,6 +188,7 @@ export default function Home() {
               // refresh graph after new data lands
               await refreshGraph();
               await mutateStats();
+              setGlobalRefreshKey((k) => k + 1);
             } catch (err) {
               console.error("Scan failed", err);
             }
@@ -197,18 +216,40 @@ export default function Home() {
           {!statsLoading && !statsError && <RiskDashboard stats={stats} />}
         </section>
 
-        {/* visualisation of current DuckDB contents */}
-        <section className="mt-8 w-full">
-          {graphError && (
-            <div className="text-red-500">
-              Error loading graph: {graphError.message}
+        {/* instances panel + visualization grid */}
+        <div className="mt-8 w-full max-w-full grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+          {selectedScenarioId && (
+            <div className="w-full overflow-y-scroll h-full max-h-[600px]">
+              <InstancesPanel
+                key={selectedScenarioId}
+                scenarioId={selectedScenarioId}
+                refreshKey={globalRefreshKey}
+                properties={(() => {
+                  const current = stats.find(
+                    (s) => s.id === selectedScenarioId,
+                  );
+                  return current
+                    ? {
+                        title: current.title,
+                        remediation: current.remediation,
+                        description: current.description,
+                      }
+                    : { title: "", remediation: "", description: "" };
+                })()}
+                onClose={() => setSelectedScenarioId(null)}
+              />
             </div>
           )}
-          {graphLoading && <div>Loading graph…</div>}
-        </section>
 
-        <div className="w-full">
-          <AzureSecurityGraph height={600} data={graphData} />
+          <div className="w-full h-full col-span-2">
+            {graphError && (
+              <div className="text-red-500">
+                Error loading graph: {graphError.message}
+              </div>
+            )}
+            {graphLoading && <div>Loading graph…</div>}
+            <AzureSecurityGraph height={600} data={graphData} />
+          </div>
         </div>
       </main>
     </div>

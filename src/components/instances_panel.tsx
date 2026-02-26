@@ -2,6 +2,11 @@ import { useCallback, useState } from "react";
 import useSWR from "swr";
 import { ScenarioInstanceRow } from "../types/scenario-instances";
 import { InstanceRow } from "./instance_row";
+import { SCENARIOS } from "../app/_lib/queries";
+import { useActiveGraph } from "@/src/hooks/useGraph";
+import { GraphQueryType } from "@/src/types";
+import { useDuckDB } from "../context/db_context";
+import { AsyncDuckDB } from "@duckdb/duckdb-wasm";
 
 function formatHeader(key: string): string {
   const withSpaces = key.replace(/_/g, " ");
@@ -11,10 +16,6 @@ function formatHeader(key: string): string {
     .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
     .join(" ");
 }
-
-import { useActiveGraph } from "@/src/hooks/useGraph";
-import { GraphQueryType } from "@/src/types";
-
 interface InstancesPanelProps {
   properties: {
     title: string;
@@ -28,28 +29,54 @@ interface InstancesPanelProps {
   onClose: () => void;
 }
 
-const postFetcher = async ({ url, id }: { url: string; id: string }) => {
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ scenarioId: id }),
-  });
-  if (!res.ok) {
-    throw new Error(await res.text());
+const postFetcher = async ({ db, id }: { db: AsyncDuckDB; id: string }) => {
+  const conn = await db.connect();
+  try {
+    const scenario = SCENARIOS[id];
+    if (!scenario) {
+      throw new Error(`Scenario with id ${id} not found`);
+    }
+    const res = await conn.query(scenario.instancesSql);
+    const rows = res
+      .toArray()
+      .map((r) => r.toJSON() as Record<string, unknown>);
+    const inst: ScenarioInstanceRow[] = rows.map((r) => {
+      const elementId = String(r.elementId ?? "");
+      delete r.elementId;
+      const row: Record<string, unknown> = {};
+      for (const k in r) {
+        const v = r[k];
+        if (
+          v === null ||
+          typeof v === "string" ||
+          typeof v === "number" ||
+          typeof v === "boolean"
+        ) {
+          row[k] = v;
+        } else {
+          row[k] = JSON.stringify(v);
+        }
+      }
+      return { elementId, ...row } as ScenarioInstanceRow;
+    });
+    return inst;
+  } catch (e) {
+    console.error("Error running instances SQL query", e);
+    throw e instanceof Error ? e : new Error(String(e));
+  } finally {
+    await conn.close();
   }
-  const data = await res.json();
-  return (data.instances || []) as ScenarioInstanceRow[];
 };
 
 function useInstances(scenarioId: string | null, refreshKey: number) {
+  const { db } = useDuckDB();
+
   const {
     data: instances = [],
     error: instancesError,
     isLoading: instancesLoading,
   } = useSWR<ScenarioInstanceRow[]>(
-    scenarioId
-      ? { url: "/api/scenario-instances", id: scenarioId, refreshKey }
-      : null,
+    scenarioId && db ? { db, id: scenarioId, refreshKey } : null,
     postFetcher,
   );
 

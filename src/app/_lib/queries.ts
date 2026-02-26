@@ -6,8 +6,10 @@ interface Scenario {
   countQuery: string;
   // the query used to populate the dashboard count (SQL for DuckDB)
   countQuerySql: string;
-  // query that returns tabular instance rows for the dashboard table
+  // query that returns tabular instance rows for the dashboard table (Cypher for Neo4j)
   instancesQuery: string;
+  // query that returns tabular instance rows for the dashboard table (SQL for DuckDB)
+  instancesSql: string;
   // focused graph query that accepts $elementId and returns a compact subgraph
   focusedQuery: string;
   // the graph query used for visualization of the full graph
@@ -51,6 +53,21 @@ export const SCENARIOS: Record<string, Scenario> = {
         cve AS vulnerability, 
         id AS identity
       ORDER BY vm.name
+    `,
+    instancesSql: /* sql */ `
+      SELECT
+        vm.uid AS elementId,
+        vm.name AS vm,
+        vuln.properties AS vulnerability,
+        id.name AS identity
+      FROM resources vm
+      JOIN resource_rel r1 ON r1.from_uid = vm.uid AND r1.reltype = 'HAS_INTERFACE'
+      JOIN resource_rel r2 ON r2.from_uid = r1.to_uid AND r2.reltype = 'ASSOCIATED_PUBLIC_IP'
+      JOIN resource_rel r3 ON r3.from_uid = r2.to_uid AND r3.reltype = 'EXPOSES_TO'
+      JOIN resource_rel r4 ON r4.from_uid = vm.uid AND r4.reltype = 'HAS_VULNERABILITY'
+      JOIN resources vuln ON vuln.uid = r4.to_uid AND vuln.properties LIKE '%"severity":"critical"%'
+      JOIN resource_rel r5 ON r5.from_uid = vm.uid AND r5.reltype = 'HAS_IDENTITY'
+      JOIN resources id ON id.uid = r5.to_uid;
     `,
     focusedQuery: /* cypher */ `
       MATCH (vm:Resource:Compute) WHERE elementId(vm) = $elementId
@@ -114,6 +131,24 @@ export const SCENARIOS: Record<string, Scenario> = {
             id AS identity
       ORDER BY virtualMachine.name
     `,
+    instancesSql: /* sql */ `
+      SELECT
+        vm.uid AS elementId,
+        vm.name AS virtualMachine,
+        kv.name AS keyVault,
+        ra.properties AS role,
+        id.name AS identity
+      FROM resources vm
+      JOIN resource_rel r1 ON r1.from_uid = vm.uid AND r1.reltype = 'HAS_INTERFACE'
+      JOIN resource_rel r2 ON r2.from_uid = r1.to_uid AND r2.reltype = 'ASSOCIATED_PUBLIC_IP'
+      JOIN resource_rel r3 ON r3.from_uid = r2.to_uid AND r3.reltype = 'EXPOSES_TO'
+      JOIN resource_rel r4 ON r4.from_uid = vm.uid AND r4.reltype = 'HAS_IDENTITY'
+      JOIN resource_rel r5 ON r5.from_uid = r4.to_uid AND r5.reltype = 'ASSIGNED'
+      JOIN resource_rel r6 ON r6.from_uid = r5.to_uid AND r6.reltype = 'ON_RESOURCE'
+      JOIN resources kv ON kv.uid = r6.to_uid AND kv.type LIKE '%keyvault%'
+      JOIN resources ra ON ra.uid = r5.to_uid AND ra.type = 'roleassignment'
+      JOIN resources id ON id.uid = r4.to_uid;
+    `,
     focusedQuery: /* cypher */ `
       MATCH (vm:Resource:Compute) WHERE elementId(vm) = $elementId
       MATCH srcReachesInternet = (vm:Resource:Compute)-[:HAS_INTERFACE]->(nic:Resource:Network_NIC)-[:ASSOCIATED_PUBLIC_IP]->(pip:Resource:Network_PublicIP)-[:EXPOSES_TO]->(internet:Internet)
@@ -162,6 +197,19 @@ export const SCENARIOS: Record<string, Scenario> = {
         ra AS role
       ORDER BY identity.name, subscription.name, role.roleDefinitionName
     `,
+    instancesSql: /* sql */ `
+      SELECT
+        id.uid AS elementId,
+        id.name AS identity,
+        sub.name AS subscription,
+        ra.properties AS role
+      FROM resources id
+      JOIN resource_rel r1 ON r1.from_uid = id.uid AND r1.reltype = 'ASSIGNED'
+      JOIN resources ra ON ra.uid = r1.to_uid AND ra.type = 'roleassignment'
+      JOIN resource_rel r2 ON r2.from_uid = ra.uid AND r2.reltype = 'ON_RESOURCE'
+      JOIN resources sub ON sub.uid = r2.to_uid AND sub.type = 'microsoft.resources/subscriptions'
+      WHERE ra.properties LIKE '%"roleDefinitionName":"Owner"%' OR ra.properties LIKE '%"roleDefinitionName":"Contributor"%';
+    `,
     focusedQuery: /* cypher */ `
       MATCH (id:Identity) WHERE elementId(id) = $elementId
       OPTIONAL MATCH permissionPath = (id)-[:ASSIGNED]->(ra:RoleAssignment)-[:ON_RESOURCE]->(sub:AzureResource)
@@ -209,6 +257,20 @@ export const SCENARIOS: Record<string, Scenario> = {
       WHERE v.severity IN ['Critical','High'] AND v.status = 'Unpatched' AND v.published_date < date() - duration({days:90})
       RETURN vm AS virtualMachine, v AS vulnerability, r4 AS relation
       ORDER BY virtualMachine.name
+    `,
+    instancesSql: /* sql */ `
+      SELECT
+        vm.uid AS elementId,
+        vm.name AS virtualMachine,
+        v.properties AS vulnerability
+      FROM resources vm
+      JOIN resource_rel r1 ON r1.from_uid = vm.uid AND r1.reltype = 'HAS_INTERFACE'
+      JOIN resource_rel r2 ON r2.from_uid = r1.to_uid AND r2.reltype = 'ASSOCIATED_PUBLIC_IP'
+      JOIN resource_rel r3 ON r3.from_uid = r2.to_uid AND r3.reltype = 'EXPOSES_TO'
+      JOIN resource_rel r4 ON r4.from_uid = vm.uid AND r4.reltype = 'HAS_VULNERABILITY'
+      JOIN resources v ON v.uid = r4.to_uid
+      WHERE (v.properties LIKE '%"severity":"critical"%' OR v.properties LIKE '%"severity":"high"%')
+        AND v.properties LIKE '%"status":"Unpatched"%';
     `,
     focusedQuery: /* cypher */ `
       MATCH (vm:Resource:Compute) WHERE elementId(vm) = $elementId
@@ -265,6 +327,25 @@ export const SCENARIOS: Record<string, Scenario> = {
         id                 AS identity,
         ra   AS role
       ORDER BY vm.name, target;
+    `,
+    instancesSql: /* sql */ `
+      SELECT
+        src.uid AS elementId,
+        src.name AS virtualMachine,
+        tgt.name AS target,
+        id.name AS identity,
+        ra.properties AS role
+      FROM resources src
+      JOIN resource_rel r1 ON r1.from_uid = src.uid AND r1.reltype = 'HAS_INTERFACE'
+      JOIN resource_rel r2 ON r2.from_uid = r1.to_uid AND r2.reltype = 'ASSOCIATED_PUBLIC_IP'
+      JOIN resource_rel r3 ON r3.from_uid = r2.to_uid AND r3.reltype = 'EXPOSES_TO'
+      JOIN resource_rel r4 ON r4.from_uid = src.uid AND r4.reltype = 'HAS_IDENTITY'
+      JOIN resource_rel r5 ON r5.from_uid = r4.to_uid AND r5.reltype = 'ASSIGNED'
+      JOIN resource_rel r6 ON r6.from_uid = r5.to_uid AND r6.reltype = 'ON_RESOURCE'
+      JOIN resources tgt ON tgt.uid = r6.to_uid
+      JOIN resources ra ON ra.uid = r5.to_uid AND ra.type = 'roleassignment'
+      JOIN resources id ON id.uid = r4.to_uid
+      WHERE tgt.type LIKE '%subscription%' OR tgt.type LIKE '%resourcegroups%' OR tgt.type LIKE '%keyvault%' OR tgt.type LIKE '%database%' OR tgt.type LIKE '%storageaccounts%';
     `,
     focusedQuery: /* cypher */ `
       MATCH (src:Resource:Compute) WHERE elementId(src) = $elementId
