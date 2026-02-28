@@ -180,7 +180,7 @@ export const SCENARIOS: Record<string, Scenario> = {
     `,
     mainQuery: /* sql */ `
       SELECT
-        vm, r1, r2, r3, r4, r5, r6, kv, ra, idn
+        vm, r1, r2, r3, r4, r5, r6, kv, ra, idn, pip, nic, internet
       FROM resources vm
       JOIN resource_rel r1 ON r1.from_uid = vm.uid AND r1.reltype = 'HAS_INTERFACE'
       JOIN resource_rel r2 ON r2.from_uid = r1.to_uid AND r2.reltype = 'ASSOCIATED_PUBLIC_IP'
@@ -191,6 +191,9 @@ export const SCENARIOS: Record<string, Scenario> = {
       JOIN resources kv ON kv.uid = r6.to_uid AND kv.type LIKE '%keyvault%'
       JOIN resources ra ON ra.uid = r5.to_uid AND ra.type = 'roleassignment'
       JOIN resources idn ON idn.uid = r4.to_uid
+      JOIN resources pip ON pip.uid = r2.to_uid
+      JOIN resources nic ON nic.uid = r1.to_uid
+      JOIN resources internet ON internet.uid = r3.to_uid
     `,
     elementId: "vm.uid",
     instanceMapping: [
@@ -450,7 +453,10 @@ export const SCENARIOS: Record<string, Scenario> = {
         r6,
         tgt,
         ra,
-        idn
+        idn,
+        nic,
+        pip,
+        internet
       FROM resources src
       JOIN resource_rel r1 ON r1.from_uid = src.uid AND r1.reltype = 'HAS_INTERFACE'
       JOIN resource_rel r2 ON r2.from_uid = r1.to_uid AND r2.reltype = 'ASSOCIATED_PUBLIC_IP'
@@ -458,9 +464,12 @@ export const SCENARIOS: Record<string, Scenario> = {
       JOIN resource_rel r4 ON r4.from_uid = src.uid AND r4.reltype = 'HAS_IDENTITY'
       JOIN resource_rel r5 ON r5.from_uid = r4.to_uid AND r5.reltype = 'ASSIGNED'
       JOIN resource_rel r6 ON r6.from_uid = r5.to_uid AND r6.reltype = 'ON_RESOURCE'
-      JOIN resources tgt ON tgt.uid = r6.to_uid
-      JOIN resources ra ON ra.uid = r5.to_uid AND ra.type = 'roleassignment'
+      JOIN resources nic ON nic.uid = r1.to_uid
+      JOIN resources pip ON pip.uid = r2.to_uid
+      JOIN resources internet ON internet.uid = r3.to_uid
       JOIN resources idn ON idn.uid = r4.to_uid
+      JOIN resources ra ON ra.uid = r5.to_uid
+      JOIN resources tgt ON tgt.uid = r6.to_uid
       WHERE tgt.type LIKE '%subscription%' OR tgt.type LIKE '%resourcegroups%' OR tgt.type LIKE '%keyvault%' OR tgt.type LIKE '%database%' OR tgt.type LIKE '%storageaccounts%'
     `,
     elementId: "src.uid",
