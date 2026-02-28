@@ -10,12 +10,12 @@ import { runAzureScanDuck } from "./_lib/duckIngestion/scannerDuck";
 import { useDuckDB } from "../context/db_context";
 import DuckQueryConsole from "../components/duck_query_console";
 import AzureSecurityGraph from "../components/azure_security_graph";
-import { useDuckGraph } from "../hooks/useDuckGraph";
 import { useStats } from "../hooks/useStats";
 import RiskDashboard, {
   CardScenarioClickEvent,
 } from "../components/risk_dashboard";
 import InstancesPanel from "../components/instances_panel";
+import { useActiveGraph, useGraphData } from "../hooks/useGraph";
 
 // TODO: verify this actually works
 export function headers() {
@@ -43,13 +43,11 @@ export default function Home() {
   const { stats, statsLoading, statsError, mutateStats } = useStats();
 
   const {
-    data: graphData,
-    loading: graphLoading,
-    error: graphError,
-    refresh: refreshGraph,
-  } = useDuckGraph(db);
+    activeQuery,
+  } = useActiveGraph();
 
-  // respond to risk dashboard card clicks
+  const { graphData, graphLoading, graphError} = useGraphData(activeQuery);
+
   useEffect(() => {
     const handler = (e: Event) => {
       const evt = e as CardScenarioClickEvent;
@@ -90,8 +88,6 @@ export default function Home() {
                     authenticatedUser?.credential ?? null,
                   );
                   console.log("Scan finished", result);
-                  // refresh graph after new data lands
-                  await refreshGraph();
                   await mutateStats();
                   setGlobalRefreshKey((k) => k + 1);
                 } catch (err) {
