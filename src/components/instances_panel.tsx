@@ -36,7 +36,29 @@ const postFetcher = async ({ db, id }: { db: AsyncDuckDB; id: string }) => {
     if (!scenario) {
       throw new Error(`Scenario with id ${id} not found`);
     }
-    const res = await conn.query(scenario.instancesSql);
+
+    function getInstancesQuery(): string {
+      // start with the mainQuery
+      const mainQuery = scenario.mainQuery;
+      // extract elementId
+      const elementIdReference = scenario.elementId;
+      const instanceMapping = scenario.instanceMapping;
+
+      // concatenate the query in the form of :
+      const queryString = `
+        SELECT 
+        ${elementIdReference} AS elementId, ${instanceMapping
+          .map((m) => m.reference + " AS " + m.displayName)
+          .join(", ")}
+        FROM (${mainQuery})
+      `;
+      return queryString;
+    }
+
+    // const res = await conn.query(scenario.instancesSql);
+    const queryStr = getInstancesQuery();
+    console.log("Running instances query:", queryStr);
+    const res = await conn.query(queryStr);
     const rows = res
       .toArray()
       .map((r) => r.toJSON() as Record<string, unknown>);
