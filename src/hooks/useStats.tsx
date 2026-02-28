@@ -21,7 +21,24 @@ function useStats() {
         const stats: Stat[] = [];
         for (const key of Object.keys(SCENARIOS)) {
           const scenario = SCENARIOS[key];
-          const res = await conn.query(scenario.countQuerySql);
+
+          function getCountQuery(): string {
+            const mainQuery = scenario.mainQuery;
+            const countQuery = `
+              SELECT COUNT(*) as count FROM (${mainQuery})
+            `;
+            return countQuery;
+          }
+
+          const countQueryStr = getCountQuery();
+          console.log(
+            "Running count query for scenario",
+            scenario.id,
+            ":",
+            countQueryStr,
+          );
+
+          const res = await conn.query(countQueryStr);
           const rows = res
             .toArray()
             .map((r) => r.toJSON() as Record<string, unknown>);
