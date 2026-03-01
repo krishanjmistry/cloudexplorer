@@ -5,7 +5,7 @@ import { InstanceRow } from "./InstanceRow";
 import { SCENARIOS } from "../app/_lib/queries";
 import { useActiveGraph } from "@/src/hooks/useGraph";
 import { GraphQueryType } from "@/src/types";
-import { useDuckDB } from "../context/db_context";
+import { useDuckDB } from "../context/DuckDBContext";
 import { AsyncDuckDB } from "@duckdb/duckdb-wasm";
 
 function formatHeader(key: string): string {

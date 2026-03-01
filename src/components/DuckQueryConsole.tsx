@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
-import { useDuckDB } from "../context/db_context";
+import { useDuckDB } from "../context/DuckDBContext";
 import { rowsFromResult } from "../utils/table_row";
 
 export default function DuckQueryConsole() {

@@ -2,12 +2,12 @@
 import { useState, useEffect, useRef } from "react";
 
 import CloudIcon from "../components/CloudIcon";
-import { useAuth } from "../context/auth_context";
+import { useAuth } from "../context/AuthContext";
 import SignInOverlay from "../components/SignInOverlay";
 import UserMenu from "../components/UserMenu";
 
 import { runAzureScanDuck } from "./_lib/duckIngestion/scannerDuck";
-import { useDuckDB } from "../context/db_context";
+import { useDuckDB } from "../context/DuckDBContext";
 import DuckQueryConsole from "../components/DuckQueryConsole";
 import NodeGraph from "../components/NodeGraph";
 import { useStats } from "../hooks/useStats";

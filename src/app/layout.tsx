@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Inter } from "next/font/google";
-import { AuthProvider } from "../context/auth_context";
-import { DuckDBProvider } from "../context/db_context";
+import { AuthProvider } from "../context/AuthContext";
+import { DuckDBProvider } from "../context/DuckDBContext";
 
 const inter = Inter({
   subsets: ["latin"],

@@ -1,5 +1,5 @@
 import { useForm, useWatch } from "react-hook-form";
-import { Provider, SignInOptions, useAuth } from "../context/auth_context";
+import { Provider, SignInOptions, useAuth } from "../context/AuthContext";
 
 type SignInFormValues = SignInOptions;
 

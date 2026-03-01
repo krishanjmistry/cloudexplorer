@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAuth } from "../context/auth_context";
+import { useAuth } from "../context/AuthContext";
 
 export default function UserMenu() {
   const { authenticatedUser, signedIn, signOut } = useAuth();

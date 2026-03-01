@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { Stat } from "../app/api/stats/route";
-import { useDuckDB } from "../context/db_context";
+import { useDuckDB } from "../context/DuckDBContext";
 import { Scenario, SCENARIOS } from "../app/_lib/queries";
 
 function constructCountQuery(scenario: Scenario): string {
