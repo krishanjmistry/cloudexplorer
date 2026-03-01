@@ -1,6 +1,5 @@
 import type * as duckdb from "@duckdb/duckdb-wasm";
 import type { TokenCredential } from "@azure/core-auth";
-import { ensureSchema } from "./constraints";
 import { upsertResourcesBatch } from "./dbActions";
 import { collectSubscriptionResourceGroupRelations } from "./containers";
 import { collectResourceGroupResourceRelationships } from "./containers";
@@ -143,8 +142,6 @@ export async function runAzureScanDuck(
 
   const conn = await db.connect();
   try {
-    await ensureSchema(conn);
-
     const { inserted: totalResourcesUpserted, idToUid } =
       await upsertResourcesBatch(conn, resources);
     console.log(`✅ Upserted ${totalResourcesUpserted} resources into DuckDB.`);

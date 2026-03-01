@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import * as duckdb from "@duckdb/duckdb-wasm";
+import { ensureSchema } from "../app/_lib/duckIngestion/constraints";
 
 interface DuckDBState {
   db: duckdb.AsyncDuckDB | null;
@@ -45,6 +46,13 @@ export const DuckDBProvider: React.FC<{ children: React.ReactNode }> = ({
         await database.instantiate(bundle.mainModule, bundle.pthreadWorker);
 
         URL.revokeObjectURL(worker_url);
+
+        const conn = await database.connect();
+        try {
+          await ensureSchema(conn);
+        } finally {
+          conn.close();
+        }
 
         if (!isCancelled) {
           setDb(database);
