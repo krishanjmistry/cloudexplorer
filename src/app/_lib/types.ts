@@ -8,7 +8,7 @@ export type AzureResourceRow = {
   resourceGroup: string | null;
   subscriptionId: string;
   managedBy: string | null;
-  sku: string | null;
+  sku: Record<string, unknown> | null;
   properties: Record<string, unknown>;
   tags: Record<string, unknown> | null;
   identity?: Record<string, unknown> | null;
@@ -35,6 +35,8 @@ export const AzureResourceType = {
   VirtualNetwork_Subnet: "microsoft.network/virtualnetworks/subnets",
   NetworkInterface: "microsoft.network/networkinterfaces",
   PublicIpAddress: "microsoft.network/publicipaddresses",
+  NetworkWatcher: "microsoft.network/networkwatchers",
+  Internet: "internet",
 
   VirtualMachine: "microsoft.compute/virtualmachines",
   Compute_Disk: "microsoft.compute/disks",

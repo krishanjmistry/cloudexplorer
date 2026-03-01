@@ -18,6 +18,9 @@ const CANONICAL_LABELS: Record<AzureResourceTypeKey, string[]> = {
   VirtualNetwork_Subnet: ["Resource", "Network", "Network_Subnet"],
   NetworkInterface: ["Resource", "Network", "Network_NIC"],
   PublicIpAddress: ["Resource", "Network", "Network_PublicIP"],
+  NetworkWatcher: ["Resource", "Network", "Network_Watcher"],
+
+  Internet: ["Internet"],
 
   VirtualMachine: ["Resource", "Compute", "Compute_VirtualMachine"],
   Compute_Disk: ["Resource", "Compute", "Storage", "Storage_Disk"],
