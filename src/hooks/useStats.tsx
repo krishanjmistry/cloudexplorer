@@ -1,7 +1,11 @@
 import { useState, useCallback } from "react";
 import { Stat } from "../app/api/stats/route";
 import { useDuckDB } from "../context/db_context";
-import { SCENARIOS } from "../app/_lib/queries";
+import { Scenario, SCENARIOS } from "../app/_lib/queries";
+
+function constructCountQuery(scenario: Scenario): string {
+  return `SELECT COUNT(*) as count FROM (${scenario.mainQuery})`;
+}
 
 function useStats() {
   const { db, loading: dbLoading } = useDuckDB();
@@ -9,7 +13,7 @@ function useStats() {
   const [loading, setLoading] = useState<boolean>(dbLoading);
   const [error, setError] = useState<Error | null>(null);
 
-  const computeFromDb = useCallback(async () => {
+  const calculateStatsFromDb = useCallback(async () => {
     if (!db) {
       return;
     }
@@ -22,29 +26,11 @@ function useStats() {
         for (const key of Object.keys(SCENARIOS)) {
           const scenario = SCENARIOS[key];
 
-          function getCountQuery(): string {
-            const mainQuery = scenario.mainQuery;
-            const countQuery = `
-              SELECT COUNT(*) as count FROM (${mainQuery})
-            `;
-            return countQuery;
-          }
+          const countQuery = constructCountQuery(scenario);
+          const res = await conn.query(countQuery);
 
-          const countQueryStr = getCountQuery();
-          console.log(
-            "Running count query for scenario",
-            scenario.id,
-            ":",
-            countQueryStr,
-          );
+          const count = Number(res.toArray()[0]?.toJSON().count ?? 0);
 
-          const res = await conn.query(countQueryStr);
-          const rows = res
-            .toArray()
-            .map((r) => r.toJSON() as Record<string, unknown>);
-          const count = rows.length
-            ? Number(rows[0].count as number | string | undefined) || 0
-            : 0;
           stats.push({
             id: scenario.id,
             title: scenario.title,
@@ -69,7 +55,7 @@ function useStats() {
     stats,
     statsLoading: loading,
     statsError: error,
-    mutateStats: computeFromDb,
+    mutateStats: calculateStatsFromDb,
   };
 }
 

@@ -5,7 +5,7 @@ interface instanceTableMapping {
   displayName: string;
 }
 
-interface Scenario {
+export interface Scenario {
   id: string;
   title: string;
   description: string;
