@@ -1,6 +1,6 @@
 import { AzureResourceTypeKey, AzureResourceTypeValue, typeKey } from "./types";
 
-export function sanitizeLabel(type: string | undefined): string {
+function sanitizeLabel(type: string | undefined): string {
   const base = (type || "Unknown")
     .replace(/\//g, "_")
     .replace(/[^A-Za-z0-9_]/g, "_");
@@ -8,7 +8,7 @@ export function sanitizeLabel(type: string | undefined): string {
   return /^[0-9]/.test(prefixed) ? `L_${prefixed}` : prefixed;
 }
 
-export function sanitizeCanonicalLabel(name: string): string {
+function sanitizeCanonicalLabel(name: string): string {
   const s = name.replace(/[^A-Za-z0-9_]/g, "_");
   return /^[0-9]/.test(s) ? `L_${s}` : s || "Unknown";
 }

@@ -17,7 +17,7 @@ import {
   GraphResponseObject,
 } from "./enrichPrincipals";
 import { upsertRelationshipsBatch } from "./dbActions";
-import { AzureResourceRow, RoleDefinitionAssignedRow } from "../scanner/types";
+import { AzureResourceRow, RoleDefinitionAssignedRow } from "../types";
 
 import { containers as localContainers } from "./local/containers";
 import { resources as localResources } from "./local/resources";
@@ -26,7 +26,7 @@ import { graphResponse as localGraphResponse } from "./local/graphResponse";
 import {
   fetchAuthorizationResources,
   fetchAzureResources,
-} from "../scanner/azure";
+} from "../azure";
 import { ResourceGraphClient } from "@azure/arm-resourcegraph";
 
 export interface UpsertResult {

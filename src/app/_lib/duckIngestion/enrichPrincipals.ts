@@ -1,6 +1,6 @@
 import type { TokenCredential } from "@azure/identity";
 import { Client as MicrosoftGraphClient } from "@microsoft/microsoft-graph-client";
-import { AzureResourceRow } from "../scanner/types";
+import { AzureResourceRow } from "../types";
 
 export interface GraphResponseObject {
   response: Array<Record<string, unknown>>;

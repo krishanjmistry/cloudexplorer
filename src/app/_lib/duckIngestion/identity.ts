@@ -1,4 +1,4 @@
-import { AzureResourceRow, RoleDefinitionAssignedRow } from "../scanner/types";
+import { AzureResourceRow, RoleDefinitionAssignedRow } from "../types";
 import { InternalRelationship } from "./scannerDuck";
 
 export function collectPrincipalToUserAssignedIdentityMappings(resources: AzureResourceRow[]) {

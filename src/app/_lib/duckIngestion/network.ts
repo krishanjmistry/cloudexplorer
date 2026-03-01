@@ -1,4 +1,4 @@
-import { AzureResourceRow, isType } from "../scanner/types";
+import { AzureResourceRow, isType } from "../types";
 import { InternalRelationship } from "./scannerDuck";
 
 const INTERNET_RESOURCE_ID = "internet";

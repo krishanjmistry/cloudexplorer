@@ -9,7 +9,7 @@ import {
 } from "@/src/types";
 import { GraphData } from "../components/NodeGraph";
 import { AsyncDuckDB } from "@duckdb/duckdb-wasm";
-import { canonicalLabelsForType } from "../app/_lib/scanner/helpers";
+import { canonicalLabelsForType } from "../app/_lib/helpers";
 import { useDuckDB } from "../context/db_context";
 import { SCENARIOS } from "../app/_lib/queries";
 import {

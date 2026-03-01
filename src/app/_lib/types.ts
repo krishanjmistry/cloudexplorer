@@ -1,5 +1,3 @@
-import type { Session } from "neo4j-driver";
-
 export type AzureResourceRow = {
   id: string;
   name: string;
@@ -31,8 +29,6 @@ export type RoleDefinitionAssignedRow = {
   createdOn: string;
   [k: string]: unknown;
 };
-
-export type Neo4jSession = Session;
 
 export const AzureResourceType = {
   VirtualNetwork: "microsoft.network/virtualnetworks",

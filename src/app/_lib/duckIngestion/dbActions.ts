@@ -1,6 +1,6 @@
 import type * as duckdb from "@duckdb/duckdb-wasm";
 import { DatabaseRelationship, UpsertResult } from "./scannerDuck";
-import { AzureResourceRow } from "../scanner/types";
+import { AzureResourceRow } from "../types";
 import { rowsFromResult } from "@/src/utils/table_row";
 
 export async function upsertRelationshipsBatch(
