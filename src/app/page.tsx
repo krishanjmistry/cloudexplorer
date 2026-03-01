@@ -1,20 +1,20 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 
-import CloudIcon from "../components/cloud_icon";
+import CloudIcon from "../components/CloudIcon";
 import { useAuth } from "../context/auth_context";
-import SignInOverlay from "../components/sign_in_overlay";
-import UserMenu from "../components/user_menu";
+import SignInOverlay from "../components/SignInOverlay";
+import UserMenu from "../components/UserMenu";
 
 import { runAzureScanDuck } from "./_lib/duckIngestion/scannerDuck";
 import { useDuckDB } from "../context/db_context";
-import DuckQueryConsole from "../components/duck_query_console";
+import DuckQueryConsole from "../components/DuckQueryConsole";
 import AzureSecurityGraph from "../components/azure_security_graph";
 import { useStats } from "../hooks/useStats";
 import RiskDashboard, {
   CardScenarioClickEvent,
-} from "../components/risk_dashboard";
-import InstancesPanel from "../components/instances_panel";
+} from "../components/RiskDashboard";
+import InstancesPanel from "../components/InstancesPanel";
 import { useActiveGraph, useGraphData } from "../hooks/useGraph";
 import { GraphQueryType } from "../types";
 

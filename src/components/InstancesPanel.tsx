@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import useSWR from "swr";
 import { ScenarioInstanceRow } from "../types/scenario-instances";
-import { InstanceRow } from "./instance_row";
+import { InstanceRow } from "./InstanceRow";
 import { SCENARIOS } from "../app/_lib/queries";
 import { useActiveGraph } from "@/src/hooks/useGraph";
 import { GraphQueryType } from "@/src/types";

@@ -4,9 +4,9 @@ import React, { useState, useEffect, useRef, FC, useMemo } from "react";
 import * as d3 from "d3";
 
 import { SimulationLink, SimulationNode } from "../types";
-import { LinkComponent } from "./link";
-import { NodeComponent } from "./node";
-import Tooltip, { computeTooltipPosition } from "./tooltip";
+import { LinkComponent } from "./LinkComponent";
+import { NodeComponent } from "./NodeComponent";
+import Tooltip, { computeTooltipPosition } from "./Tooltip";
 import useForceSimulation from "../hooks/useForceSimulation";
 
 export interface GraphData {
