@@ -150,7 +150,7 @@ const InstancesPanel: React.FC<InstancesPanelProps> = ({
 
   if (!scenarioId) {
     return (
-      <div className="w-full bg-white rounded-lg shadow-sm p-4 h-full overflow-y-auto">
+      <div className="w-full bg-white rounded-lg shadow-sm p-4 h-full overflow-y-scroll max-h-[600px]">
         <div className="text-sm text-gray-600">
           Select a scenario to see affected resources here.
         </div>
@@ -159,7 +159,7 @@ const InstancesPanel: React.FC<InstancesPanelProps> = ({
   }
 
   return (
-    <div className="relative p-4 w-full bg-white rounded-lg shadow-sm h-full overflow-y-auto">
+    <div className="relative p-4 w-full bg-white rounded-lg shadow-sm h-full overflow-y-scroll max-h-[600px]">
       <div className="-mx-4 -mt-4 p-4">
         <button
           type="button"

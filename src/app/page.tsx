@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import CloudIcon from "../components/cloud_icon";
 import { useAuth } from "../context/auth_context";
@@ -16,6 +16,7 @@ import RiskDashboard, {
 } from "../components/risk_dashboard";
 import InstancesPanel from "../components/instances_panel";
 import { useActiveGraph, useGraphData } from "../hooks/useGraph";
+import { GraphQueryType } from "../types";
 
 // TODO: verify this actually works
 export function headers() {
@@ -42,21 +43,29 @@ export default function Home() {
   const [globalRefreshKey, setGlobalRefreshKey] = useState(0);
   const { stats, statsLoading, statsError, mutateStats } = useStats();
 
-  const {
-    activeQuery,
-  } = useActiveGraph();
+  const { activeQuery, setActiveQuery } = useActiveGraph();
 
-  const { graphData, graphLoading, graphError} = useGraphData(activeQuery);
+  const { graphData, graphLoading, graphError } = useGraphData(activeQuery);
 
   useEffect(() => {
-    const handler = (e: Event) => {
-      const evt = e as CardScenarioClickEvent;
-      setSelectedScenarioId(evt.scenarioId);
+    const handler = (ev: CardScenarioClickEvent) => {
+      setSelectedScenarioId(ev.scenarioId);
     };
     window.addEventListener(CardScenarioClickEvent.eventName, handler);
     return () =>
       window.removeEventListener(CardScenarioClickEvent.eventName, handler);
   }, []);
+
+  const prevScenarioRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (selectedScenarioId && prevScenarioRef.current !== selectedScenarioId) {
+      setActiveQuery(null);
+    }
+    prevScenarioRef.current = selectedScenarioId;
+  }, [selectedScenarioId, setActiveQuery]);
+
+  const isFullGraphView =
+    activeQuery && activeQuery.type === GraphQueryType.Full;
 
   return (
     <div className="min-h-screen w-screen flex flex-col items-center">
@@ -97,11 +106,30 @@ export default function Home() {
               disabled={!db}
               title={
                 signedIn && db
-                  ? "Run a full Azure scan and persist into DuckDB"
-                  : "Sign in and wait for DuckDB to load"
+                  ? "Run a full scan against your cloud environment"
+                  : db
+                    ? "Sign in first"
+                    : "DuckDB not available"
               }
             >
-              Run Azure scan (duckdb)
+              Refresh
+            </button>
+            <button
+              type="button"
+              className="navbar-button"
+              onClick={() => {
+                setSelectedScenarioId(null);
+                setActiveQuery({ type: GraphQueryType.Full });
+              }}
+              disabled={graphLoading}
+              aria-busy={graphLoading}
+              title={
+                graphError
+                  ? String(graphError)
+                  : "Query the entire graph (all nodes & relationships)"
+              }
+            >
+              {graphLoading ? "Loading..." : "View full graph"}
             </button>
             <div className="flex items-center gap-3">
               {signedIn ? (
@@ -131,32 +159,29 @@ export default function Home() {
           {!statsLoading && !statsError && <RiskDashboard stats={stats} />}
         </section>
 
-        {/* instances panel + visualization grid */}
-        <div className="mt-8 w-full max-w-full grid grid-cols-1 lg:grid-cols-3 gap-y-6 lg:gap-6 items-stretch">
-          {selectedScenarioId && (
-            <div className="w-full overflow-y-scroll h-full max-h-[600px]">
-              <InstancesPanel
-                key={selectedScenarioId}
-                scenarioId={selectedScenarioId}
-                refreshKey={globalRefreshKey}
-                properties={(() => {
-                  const current = stats.find(
-                    (s) => s.id === selectedScenarioId,
-                  );
-                  return current
-                    ? {
-                        title: current.title,
-                        remediation: current.remediation,
-                        description: current.description,
-                      }
-                    : { title: "", remediation: "", description: "" };
-                })()}
-                onClose={() => setSelectedScenarioId(null)}
-              />
-            </div>
+        <div className="w-full max-w-full grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+          {!isFullGraphView && (
+            <InstancesPanel
+              key={selectedScenarioId}
+              scenarioId={selectedScenarioId}
+              refreshKey={globalRefreshKey}
+              properties={(() => {
+                const current = stats.find((s) => s.id === selectedScenarioId);
+                return current
+                  ? {
+                      title: current.title,
+                      remediation: current.remediation,
+                      description: current.description,
+                    }
+                  : { title: "", remediation: "", description: "" };
+              })()}
+              onClose={() => setSelectedScenarioId(null)}
+            />
           )}
 
-          <div className="w-full h-full col-span-2">
+          <div
+            className={`w-full h-full ${isFullGraphView ? "lg:col-span-3" : "lg:col-span-2"}`}
+          >
             {graphError && (
               <div className="text-red-500">
                 Error loading graph: {graphError.message}
