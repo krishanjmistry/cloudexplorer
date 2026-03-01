@@ -30,11 +30,7 @@ interface TooltipState {
   position: { x: number; y: number };
 }
 
-const NodeGraph: React.FC<NodeGraphProps> = ({
-  width = 0,
-  height,
-  data,
-}) => {
+const NodeGraph: React.FC<NodeGraphProps> = ({ width = 0, height, data }) => {
   // start with the provided width (often zero) but quickly update once the
   // container is measured.  a zero starting width ensures the svg doesn't
   // flash unexpectedly large on first render when we don't know the parent
