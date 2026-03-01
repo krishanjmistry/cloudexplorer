@@ -1,53 +1,36 @@
 import type * as duckdb from "@duckdb/duckdb-wasm";
 import type { TokenCredential } from "@azure/core-auth";
-import { upsertResourcesBatch } from "./dbActions";
-import { collectSubscriptionResourceGroupRelations } from "./containers";
-import { collectResourceGroupResourceRelationships } from "./containers";
+import { upsertRelationshipsBatch, upsertResourcesBatch } from "./dbActions";
+import {
+  collectResourceGroupResourceRelationships,
+  collectSubscriptionResourceGroupRelations,
+} from "./containers";
 import { collectComputeRelationships } from "./compute";
 import { collectNetworkRelations, InternetResource } from "./network";
 import {
   collectAuthRelations,
+  collectIdentityMappings,
   collectPrincipalToUserAssignedIdentityMappings,
   mapAuthRowsToResources,
 } from "./identity";
-import { collectIdentityMappings } from "./identity";
 import {
   convertGraphResponseToResources,
   getPrincipalsFromGraph,
   GraphResponseObject,
 } from "./enrichPrincipals";
-import { upsertRelationshipsBatch } from "./dbActions";
-import { AzureResourceRow, RoleDefinitionAssignedRow } from "../types";
+import {
+  AzureResourceRow,
+  DatabaseRelationship,
+  InternalRelationship,
+  RoleDefinitionAssignedRow,
+} from "../types";
 
 import { containers as localContainers } from "./local/containers";
 import { resources as localResources } from "./local/resources";
 import { authRows as localAuthRows } from "./local/authRows";
 import { graphResponse as localGraphResponse } from "./local/graphResponse";
-import {
-  fetchAuthorizationResources,
-  fetchAzureResources,
-} from "../azure";
+import { fetchAuthorizationResources, fetchAzureResources } from "../azure";
 import { ResourceGraphClient } from "@azure/arm-resourcegraph";
-
-export interface UpsertResult {
-  inserted: number;
-  idToUid: Map<Id, Uid>;
-}
-
-export interface InternalRelationship {
-  fromId: Id;
-  toId: Id;
-  relationshipType: string;
-}
-
-type Uid = number;
-type Id = string;
-
-export interface DatabaseRelationship {
-  fromUid: Uid;
-  toUid: Uid;
-  relationshipType: string;
-}
 
 async function prepareAzureResources(
   credential: TokenCredential | null = null,

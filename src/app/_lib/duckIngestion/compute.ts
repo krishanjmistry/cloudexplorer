@@ -1,13 +1,16 @@
-import { AzureResourceRow, isType } from "../types";
-import { InternalRelationship } from "./scannerDuck";
+import {
+  AzureResourceRow,
+  InternalRelationship,
+  isAzureResourceType,
+} from "../types";
 
 export function collectComputeRelationships(
   resources: AzureResourceRow[],
 ): InternalRelationship[] {
   const relations: InternalRelationship[] = [];
 
-  const vms = resources.filter(
-    (r) => isType(r.type, "microsoft.compute/virtualmachines"),
+  const vms = resources.filter((r) =>
+    isAzureResourceType(r.type, "microsoft.compute/virtualmachines"),
   );
 
   for (const vm of vms) {

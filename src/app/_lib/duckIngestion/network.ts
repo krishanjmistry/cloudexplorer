@@ -1,5 +1,8 @@
-import { AzureResourceRow, isType } from "../types";
-import { InternalRelationship } from "./scannerDuck";
+import {
+  AzureResourceRow,
+  InternalRelationship,
+  isAzureResourceType,
+} from "../types";
 
 const INTERNET_RESOURCE_ID = "internet";
 
@@ -14,8 +17,8 @@ export function collectNetworkRelations(
   const relationships: InternalRelationship[] = [];
   const newResources: AzureResourceRow[] = [];
 
-  for (const vnet of rows.filter(
-    (r) => isType(r.type, "microsoft.network/virtualnetworks"),
+  for (const vnet of rows.filter((r) =>
+    isAzureResourceType(r.type, "microsoft.network/virtualnetworks"),
   )) {
     const vnetId = vnet.id.toLowerCase();
     const subnets =
@@ -47,8 +50,8 @@ export function collectNetworkRelations(
     }
   }
 
-  for (const nic of rows.filter(
-    (r) => isType(r.type, "microsoft.network/networkinterfaces"),
+  for (const nic of rows.filter((r) =>
+    isAzureResourceType(r.type, "microsoft.network/networkinterfaces"),
   )) {
     const nicId = nic.id.toLowerCase();
     const ipConfigs =
@@ -110,8 +113,8 @@ export function collectNetworkRelations(
     }
   }
 
-  for (const pip of rows.filter(
-    (r) => isType(r.type, "microsoft.network/publicipaddresses"),
+  for (const pip of rows.filter((r) =>
+    isAzureResourceType(r.type, "microsoft.network/publicipaddresses"),
   )) {
     relationships.push({
       fromId: pip.id.toLowerCase(),

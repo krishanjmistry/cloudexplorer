@@ -1,5 +1,8 @@
-import { AzureResourceRow, isType } from "../types";
-import { InternalRelationship } from "./scannerDuck";
+import {
+  AzureResourceRow,
+  InternalRelationship,
+  isAzureResourceType,
+} from "../types";
 
 export function collectResourceGroupResourceRelationships(
   resources: AzureResourceRow[],
@@ -26,7 +29,10 @@ export function collectSubscriptionResourceGroupRelations(
 
   for (const container of containers) {
     if (
-      isType(container.type, "microsoft.resources/subscriptions/resourcegroups")
+      isAzureResourceType(
+        container.type,
+        "microsoft.resources/subscriptions/resourcegroups",
+      )
     ) {
       const subscriptionId = `/subscriptions/${String(container.subscriptionId).toLowerCase()}`;
       relations.push({

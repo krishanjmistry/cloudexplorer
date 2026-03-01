@@ -1,7 +1,12 @@
-import { AzureResourceRow, RoleDefinitionAssignedRow } from "../types";
-import { InternalRelationship } from "./scannerDuck";
+import {
+  AzureResourceRow,
+  InternalRelationship,
+  RoleDefinitionAssignedRow,
+} from "../types";
 
-export function collectPrincipalToUserAssignedIdentityMappings(resources: AzureResourceRow[]) {
+export function collectPrincipalToUserAssignedIdentityMappings(
+  resources: AzureResourceRow[],
+) {
   const mapping: Map<string, string> = new Map();
   const uais = resources.filter(
     (r) =>

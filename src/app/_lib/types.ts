@@ -60,7 +60,7 @@ export function normalizeType(raw?: string | null): string | undefined {
   return raw.trim().replace(/\/+$/u, "").toLowerCase();
 }
 
-export function isType(
+export function isAzureResourceType(
   raw: string | undefined | null,
   expected: AzureResourceTypeValue,
 ) {
@@ -80,4 +80,22 @@ export function typeKey(
   );
 }
 
-export const CHUNK_SIZE = 200;
+type Uid = number;
+type Id = string;
+
+export interface UpsertResult {
+  inserted: number;
+  idToUid: Map<Id, Uid>;
+}
+
+export interface InternalRelationship {
+  fromId: Id;
+  toId: Id;
+  relationshipType: string;
+}
+
+export interface DatabaseRelationship {
+  fromUid: Uid;
+  toUid: Uid;
+  relationshipType: string;
+}
