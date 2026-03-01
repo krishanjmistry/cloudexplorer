@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Stat } from "../types";
+import { useStats } from "../hooks/useStats";
 
 declare global {
   interface WindowEventMap {
@@ -98,7 +98,10 @@ const SEVERITY_ORDER: Record<string, number> = {
   Safe: 4,
 };
 
-const RiskDashboard = ({ stats }: { stats: Stat[] }) => {
+const RiskDashboard = ({ refreshKey }: { refreshKey: number }) => {
+  // TODO: handle stats loading and error states in the UI
+  const { stats } = useStats(refreshKey);
+
   const [showSafe, setShowSafe] = useState(false);
 
   const sorted = [...stats].sort((a, b) => {
@@ -121,7 +124,7 @@ const RiskDashboard = ({ stats }: { stats: Stat[] }) => {
     <>
       <div className={`flex items-center justify-end mb-3 w-full`}>
         <div className="flex items-center gap-3">
-          {/* Scan / Refresh moved to the top navbar — keep only the show/hide-safe toggle here */}
+          {/* TODO: layout shift on button */}
           <button
             type="button"
             className="text-sm px-3 py-1 rounded border hover:bg-gray-50"
@@ -141,6 +144,7 @@ const RiskDashboard = ({ stats }: { stats: Stat[] }) => {
       </div>
 
       <div>
+        {/* TODO: layout shift on Risk Dashboard cards */}
         {visible.length === 0 && safeGroup.length === 0 && (
           <div className="w-full text-sm text-gray-700 p-4 bg-yellow-50 border border-yellow-200 rounded">
             No risk statistics available.

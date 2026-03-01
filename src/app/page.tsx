@@ -41,7 +41,7 @@ export default function Home() {
     null,
   );
   const [globalRefreshKey, setGlobalRefreshKey] = useState(0);
-  const { stats, statsLoading, statsError, mutateStats } = useStats();
+  const { stats } = useStats(globalRefreshKey);
 
   const { activeQuery, setActiveQuery } = useActiveGraph();
 
@@ -97,7 +97,6 @@ export default function Home() {
                     authenticatedUser?.credential ?? null,
                   );
                   console.log("Scan finished", result);
-                  await mutateStats();
                   setGlobalRefreshKey((k) => k + 1);
                 } catch (err) {
                   console.error("Scan failed", err);
@@ -148,16 +147,7 @@ export default function Home() {
         </div>
       </header>
       <main className="p-4 w-full">
-        {/* stats / risk dashboard */}
-        <section className="w-full">
-          {statsLoading && <div>Loading statistics…</div>}
-          {statsError && (
-            <div className="text-red-500">
-              Error loading stats: {statsError.message}
-            </div>
-          )}
-          {!statsLoading && !statsError && <RiskDashboard stats={stats} />}
-        </section>
+        <RiskDashboard refreshKey={globalRefreshKey} />
 
         <div className="w-full max-w-full grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
           {!isFullGraphView && (
