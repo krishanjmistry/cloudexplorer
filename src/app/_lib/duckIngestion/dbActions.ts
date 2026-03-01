@@ -1,6 +1,7 @@
 import type * as duckdb from "@duckdb/duckdb-wasm";
 import { DatabaseRelationship, UpsertResult } from "./scannerDuck";
 import { AzureResourceRow } from "../scanner/types";
+import { rowsFromResult } from "@/src/utils/table_row";
 
 export async function upsertRelationshipsBatch(
   conn: duckdb.AsyncDuckDBConnection,
@@ -82,7 +83,7 @@ export async function upsertResourcesBatch(
         props.raw,
       );
 
-      const rows = res.toArray().map((r) => r.toJSON());
+      const rows = rowsFromResult(res);
       if (rows.length && rows[0].uid != null) {
         idToUid.set(id, Number(rows[0].uid));
       }

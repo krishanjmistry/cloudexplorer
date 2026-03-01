@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import { useDuckDB } from "../context/db_context";
+import { rowsFromResult } from "../utils/table_row";
 
 export default function DuckQueryConsole() {
   const { db, loading, error } = useDuckDB();
@@ -18,7 +19,7 @@ export default function DuckQueryConsole() {
     const conn = await db.connect();
     try {
       const queryResult = await conn.query(query);
-      const rows = queryResult.toArray().map((r) => r.toJSON());
+      const rows = rowsFromResult(queryResult);
       setResult(rows);
     } catch (e) {
       console.error("Query failed:", e);
