@@ -5,7 +5,7 @@ import { Client as MicrosoftGraphClient } from "@microsoft/microsoft-graph-clien
 
 export type Provider = "azure" | "aws" | "gcp";
 
-export interface UserProfile {
+interface UserProfile {
   displayName?: string;
   userPrincipalName?: string;
   [key: string]: unknown;

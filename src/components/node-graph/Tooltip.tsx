@@ -1,7 +1,6 @@
-import React, { FC } from "react";
-import { SimulationLink, SimulationNode } from "../types";
+import { SimulationLink, SimulationNode } from "../../types";
 
-export interface TooltipProps {
+interface TooltipProps {
   visible: boolean;
   data: SimulationNode | SimulationLink | null;
   position: { x: number; y: number };
@@ -26,7 +25,7 @@ export function computeTooltipPosition(
   return { x, y };
 }
 
-const Tooltip: FC<TooltipProps> = ({ visible, data, position }) => {
+const Tooltip: React.FC<TooltipProps> = ({ visible, data, position }) => {
   if (!visible || !data) {
     return null;
   }

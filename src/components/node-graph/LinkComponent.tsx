@@ -1,6 +1,5 @@
-import React, { FC } from "react";
-import { SimulationLink, SimulationNode } from "../types";
-import { DEFAULT_NODE_RADIUS, getNodeIconRadius } from "./graph_icons";
+import { SimulationLink, SimulationNode } from "../../types";
+import { DEFAULT_NODE_RADIUS, getNodeIconRadius } from "../graph_icons";
 
 interface LinkProps {
   link: SimulationLink;
@@ -20,7 +19,7 @@ type Coordinates = {
   y: number;
 };
 
-export const LinkComponent: FC<LinkProps> = ({
+export const LinkComponent: React.FC<LinkProps> = ({
   link,
   onHover,
   onOut,

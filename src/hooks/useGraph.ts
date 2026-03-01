@@ -7,7 +7,7 @@ import {
   type SimulationLink,
   type SimulationNode,
 } from "@/src/types";
-import { GraphData } from "../components/azure_security_graph";
+import { GraphData } from "../components/NodeGraph";
 import { AsyncDuckDB } from "@duckdb/duckdb-wasm";
 import { canonicalLabelsForType } from "../app/_lib/scanner/helpers";
 import { useDuckDB } from "../context/db_context";

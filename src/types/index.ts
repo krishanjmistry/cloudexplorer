@@ -3,7 +3,7 @@ interface Properties {
   [key: string]: any;
 }
 
-export interface NodeData {
+interface NodeData {
   elementId: string;
   labels: string[];
   name: string;

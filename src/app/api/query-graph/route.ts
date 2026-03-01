@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { isRelationship, isNode, isInt, isDateTime } from "neo4j-driver";
 import { SCENARIOS } from "@/src/app/_lib/queries";
 import driver from "@/src/utils/db_connection";
-import { GraphData } from "@/src/components/azure_security_graph";
+import { GraphData } from "@/src/components/NodeGraph";
 import {
   GraphQuery,
   GraphQueryType,

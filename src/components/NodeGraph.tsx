@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef, FC, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import * as d3 from "d3";
 
 import { SimulationLink, SimulationNode } from "../types";
-import { LinkComponent } from "./LinkComponent";
-import { NodeComponent } from "./NodeComponent";
-import Tooltip, { computeTooltipPosition } from "./Tooltip";
+import { LinkComponent } from "./node-graph/LinkComponent";
+import { NodeComponent } from "./node-graph/NodeComponent";
+import Tooltip, { computeTooltipPosition } from "./node-graph/Tooltip";
 import useForceSimulation from "../hooks/useForceSimulation";
 
 export interface GraphData {
@@ -14,7 +14,7 @@ export interface GraphData {
   links: SimulationLink[];
 }
 
-interface AzureSecurityGraphProps {
+interface NodeGraphProps {
   /**
    * Initial width to render at.  Once mounted the component measures its
    * container and adjusts automatically, so this can be omitted or set to
@@ -30,7 +30,7 @@ interface TooltipState {
   position: { x: number; y: number };
 }
 
-const AzureSecurityGraph: FC<AzureSecurityGraphProps> = ({
+const NodeGraph: React.FC<NodeGraphProps> = ({
   width = 0,
   height,
   data,
@@ -366,4 +366,4 @@ const AzureSecurityGraph: FC<AzureSecurityGraphProps> = ({
   );
 };
 
-export default AzureSecurityGraph;
+export default NodeGraph;

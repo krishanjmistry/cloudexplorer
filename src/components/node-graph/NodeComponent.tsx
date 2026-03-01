@@ -1,7 +1,7 @@
 import * as d3 from "d3";
-import React, { FC, useRef, useEffect } from "react";
-import { SimulationNode } from "../types";
-import { getIcon } from "./graph_icons";
+import { useRef, useEffect } from "react";
+import { SimulationNode } from "../../types";
+import { getIcon } from "../graph_icons";
 
 interface NodeProps {
   node: SimulationNode;
@@ -16,7 +16,7 @@ interface NodeProps {
   colorScale: d3.ScaleOrdinal<string, string>;
 }
 
-export const NodeComponent: FC<NodeProps> = ({
+export const NodeComponent: React.FC<NodeProps> = ({
   node,
   dragHandler,
   onMouseOver,

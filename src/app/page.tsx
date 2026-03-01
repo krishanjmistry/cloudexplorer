@@ -9,7 +9,7 @@ import UserMenu from "../components/UserMenu";
 import { runAzureScanDuck } from "./_lib/duckIngestion/scannerDuck";
 import { useDuckDB } from "../context/db_context";
 import DuckQueryConsole from "../components/DuckQueryConsole";
-import AzureSecurityGraph from "../components/azure_security_graph";
+import NodeGraph from "../components/NodeGraph";
 import { useStats } from "../hooks/useStats";
 import RiskDashboard, {
   CardScenarioClickEvent,
@@ -188,7 +188,7 @@ export default function Home() {
               </div>
             )}
             {graphLoading && <div>Loading graph…</div>}
-            <AzureSecurityGraph height={600} data={graphData} />
+            <NodeGraph height={600} data={graphData} />
           </div>
         </div>
         <div className="mt-8">
