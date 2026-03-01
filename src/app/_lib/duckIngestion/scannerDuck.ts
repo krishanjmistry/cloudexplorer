@@ -25,26 +25,21 @@ import {
   RoleDefinitionAssignedRow,
 } from "../types";
 
-import { containers as localContainers } from "./local/containers";
-import { resources as localResources } from "./local/resources";
-import { authRows as localAuthRows } from "./local/authRows";
-import { graphResponse as localGraphResponse } from "./local/graphResponse";
 import { fetchAuthorizationResources, fetchAzureResources } from "../azure";
 import { ResourceGraphClient } from "@azure/arm-resourcegraph";
 
 async function prepareAzureResources(
   credential: TokenCredential | null = null,
 ) {
-  // TODO: remove this local toggle
-  const local = true;
+  const local = process.env.NEXT_PUBLIC_USE_LOCAL_DATA === "true";
   let containers: AzureResourceRow[];
   let resources: AzureResourceRow[];
   let authRows: RoleDefinitionAssignedRow[];
 
   if (local) {
-    containers = localContainers;
-    resources = localResources;
-    authRows = localAuthRows;
+    containers = (await import("./local/containers")).containers;
+    resources = (await import("./local/resources")).resources;
+    authRows = (await import("./local/authRows")).authRows;
   } else {
     const client = new ResourceGraphClient(credential!);
     const { containers: liveContainers, resources: liveResources } =
@@ -101,7 +96,7 @@ async function prepareAzureResources(
   if (principalsNeedingEnrichment.size) {
     let graphResponse: GraphResponseObject;
     if (local) {
-      graphResponse = localGraphResponse;
+      graphResponse = (await import("./local/graphResponse")).graphResponse;
     } else {
       graphResponse = await getPrincipalsFromGraph(
         credential!,
