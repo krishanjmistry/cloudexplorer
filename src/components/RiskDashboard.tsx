@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Stat } from "../app/api/stats/route";
+import { Stat } from "../types";
 
 declare global {
   interface WindowEventMap {

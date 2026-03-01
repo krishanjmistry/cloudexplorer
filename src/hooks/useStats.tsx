@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Stat } from "../app/api/stats/route";
+import { Stat } from "../types";
 import { useDuckDB } from "../context/DuckDBContext";
 import { Scenario, SCENARIOS } from "../app/_lib/queries";
 

@@ -29,3 +29,13 @@ export type GraphQuery =
       focusElementId?: string;
     }
   | { type: GraphQueryType.Full };
+
+export interface Stat {
+  id: string;
+  title: string;
+  description: string;
+  count: number;
+  // severity reported to the UI (or 'Safe' when there are no matches)
+  severity: "Critical" | "High" | "Medium" | "Low" | "Safe";
+  remediation: string;
+}
