@@ -11,56 +11,42 @@ Currently only supports Azure, but designed with the other public clouds in mind
 ![System Architecture](./docs/architecture-dark.svg#gh-dark-mode-only)
 ![System Architecture](./docs/architecture-light.svg#gh-light-mode-only)
 
-- **Next.js**:
-  Fairly popular, enough docs around, batteries included.
+### D3.js
 
-- **Neo4j**:
-  Cloud infrastructure and IAM resources are inherently a graph structure. There's plenty of choice in databases out there.
+Main rendering engine for the graph visualisations. _Why not?_
 
-- **D3.js**:
-  Main rendering engine for the graph visualisations. _Why not?_
+### Choosing a database
 
-### Why is the API in TypeScript?
+The initial version of cloudexplorer used Neo4j, a fairly well known graph database - this worked well in representing the structure of resources within the cloud.
 
-The backend only needs to communicate with Neo4j and Azure, both have supported SDKs for JavaScript/TypeScript. Allows majority of project to be in a single language.
+The current architecture of cloudexplorer leverages an embedded database that runs entirely in the browser, meaining all data lives client-side. To achieve this in the browser, databases typically utilise WebAssembly (WASM).
 
-On a _personal note_, I could have chosen any language here (probably would have chosen Python/FastAPI combo) but wanted to get a better feel for TypeScript.
+There's a much smaller selection of this category of databases in existence, here's three which I trialled:
 
-Future: I am also aiming for an architecture where everything happens client side in the browser with no need for a server - auth/database/visualisation.
+1. **DuckDB WASM**: traditional relational database, queried with SQL, actively maintained
+2. **Kuzu**: property graph database, queried using Cypher (similar to Neo4j), no longer maintained.
+3. **Ladybug**: an open-source fork of Kuzu continued from the last commit
 
-## Quick start locally using Docker Compose
+I settled for DuckDB.
 
-The `docker-compose.yml` brings up:
+## Configuring sign in
 
-- **neo4j** database (bolt + HTTP)
-- **web** service for the Next.js application
+### Azure
 
-1. Copy the `.env.example` to `.env` and populate:
+To sign in to Azure, you need to create and configure an App Registration as per [these docs](https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/identity/identity/interactive-browser-credential.md#for-browsers).
 
-   ```sh
-   cp .env.example .env
-   ```
+For successful auth, a `single-page application` redirect URI should be configured to point to:
 
-   > NOTE: If a service principal is not configured via the environment variables in `.env`, pay attention to the terminal output of the web container. It will request you to login to Azure via the Azure CLI. Follow the prompts and sign in.
+```
+https://<TODO-PAGE-URI-HERE>
+```
 
-2. Launch everything:
+API permissions should be configured as follows:
 
-   ```sh
-   docker compose up --build
-   ```
+| API                      | Permissions name     | Type      |
+| ------------------------ | -------------------- | --------- |
+| Azure Service Management | `user_impersonation` | Delegated |
+| Microsoft Graph          | `Directory.ReadAll`  | Delegated |
+| Microsoft Graph          | `User.Read`          | Delegated |
 
-   - Neo4j will be available on `http://localhost:7474` (bolt `bolt://localhost:7687`)
-   - The Next.js app runs on `http://localhost:3000`
-
-3. To tear down the environment run:
-
-   ```sh
-   docker compose down
-   ```
-
-### Configuring a service principal
-
-Permissions required if using a [Service Principal](https://azure.github.io/azure-service-operator/guide/authentication/credential-format/#service-principal-using-a-client-secret)
-
-1. RBAC `Reader` permissions on subscriptions
-2. `Microsoft.Graph` `Directory.ReadAll` permission for on type `Application`
+In addition, RBAC `Reader` permissions should be given to subscriptions for the app registration
