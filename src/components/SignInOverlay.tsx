@@ -50,8 +50,8 @@ export default function SignInOverlay({
       {
         name: "tenantId",
         label: "Tenant ID",
-        placeholder: "Tenant ID (or 'common')",
-        defaultValue: process.env.NEXT_PUBLIC_AZURE_TENANT_ID || "common",
+        placeholder: "Tenant ID",
+        defaultValue: process.env.NEXT_PUBLIC_AZURE_TENANT_ID || undefined,
       },
     ],
     aws: [],
