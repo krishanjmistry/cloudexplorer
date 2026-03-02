@@ -44,7 +44,7 @@ export default function DuckQueryConsole() {
   }
 
   return (
-    <section className="p-4 border rounded shadow-sm w-[800px]">
+    <section className="p-4 border rounded shadow-sm w-full">
       <h2 className="text-xl font-bold mb-4">DuckDB console</h2>
 
       <form onSubmit={handleSubmit} className="mb-4">
