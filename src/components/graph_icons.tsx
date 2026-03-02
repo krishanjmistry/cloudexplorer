@@ -1,13 +1,13 @@
 import { SimulationNode } from "../types";
-import { ComputeServerIcon } from "./graph_icons/compute_server";
-import { IdentityMachineIcon } from "./graph_icons/identity_machine";
-import { IdentityHumanIcon } from "./graph_icons/identity_human";
-import { InternetGlobeIcon } from "./graph_icons/internet_globe";
-import { KeyVaultIcon } from "./graph_icons/key_vault";
-import { RoleAssignmentIcon } from "./graph_icons/role_assignment";
-import { NetworkInterfaceIcon } from "./graph_icons/network_interface";
-import { PublicIpIcon } from "./graph_icons/public_ip";
-import { FolderIcon } from "./graph_icons/folder";
+import { ComputeServerIcon } from "./graph-icons/ComputeServer";
+import { IdentityMachineIcon } from "./graph-icons/IdentityMachine";
+import { IdentityHumanIcon } from "./graph-icons/IdentityHuman";
+import { InternetGlobeIcon } from "./graph-icons/InternetGlobe";
+import { KeyVaultIcon } from "./graph-icons/KeyVault";
+import { RoleAssignmentIcon } from "./graph-icons/RoleAssignment";
+import { NetworkInterfaceIcon } from "./graph-icons/NetworkInterface";
+import { PublicIpIcon } from "./graph-icons/PublicIp";
+import { FolderIcon } from "./graph-icons/Folder";
 
 export const DEFAULT_NODE_RADIUS = 10;
 

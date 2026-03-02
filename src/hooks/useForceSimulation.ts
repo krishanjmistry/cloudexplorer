@@ -389,45 +389,30 @@ function computeNodeLevels(
       }
     });
   } else {
-    const outgoingNodes = new Map<string, string[]>();
+    // when there are no anchors we prefer a deterministic layout based on the
+    // node type.  the ordering here matches common Azure hierarchies (subs ➜
+    // resource groups ➜ resources ➜ identities ➜ role assignments).  by
+    // assigning a fixed level per category there are never any gaps, and the
+    // visual columns align with user expectations.
+    const TYPE_PRIORITY = [
+      "Identity",
+      "RoleAssignment",
+      "Subscription",
+      "ResourceGroup",
+      "Resource", // generic catch-all for other resources
+    ];
 
-    links.forEach((l) => {
-      const sourceNode = resolveElementId(l.source);
-      const targetNode = resolveElementId(l.target);
-      if (sourceNode !== targetNode) {
-        if (!outgoingNodes.has(sourceNode)) {
-          outgoingNodes.set(sourceNode, []);
+    nodes.forEach((n) => {
+      let lvl = TYPE_PRIORITY.length; // fallback to end if no match
+      for (let i = 0; i < TYPE_PRIORITY.length; i++) {
+        if (n.labels.includes(TYPE_PRIORITY[i])) {
+          lvl = i;
+          break;
         }
-        outgoingNodes.get(sourceNode)!.push(targetNode);
       }
+      levelsMap.set(n.elementId, lvl);
     });
-
-    nodes.forEach((n) => levelsMap.set(n.elementId, 0));
-
-    const queue = nodes.map((n) => n.elementId);
-    let queueIndex = 0;
-    const updateCounts = new Map<string, number>();
-
-    while (queueIndex < queue.length) {
-      const currentlyVisitingNode = queue[queueIndex++];
-      const curLevel = levelsMap.get(currentlyVisitingNode) ?? 0;
-      const targets = outgoingNodes.get(currentlyVisitingNode);
-      if (!targets) {
-        continue;
-      }
-
-      targets.forEach((tgt) => {
-        const tgtLevel = levelsMap.get(tgt) ?? 0;
-        if (tgtLevel <= curLevel) {
-          levelsMap.set(tgt, curLevel + 1);
-          const cnt = (updateCounts.get(tgt) ?? 0) + 1;
-          updateCounts.set(tgt, cnt);
-          if (cnt <= nodes.length) {
-            queue.push(tgt);
-          }
-        }
-      });
-    }
   }
+  console.log("Final node levels:", levelsMap);
   return levelsMap;
 }

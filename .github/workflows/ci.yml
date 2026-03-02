@@ -21,10 +21,6 @@ jobs:
 
       - name: Install dependencies and build
         run: npm ci && npm run build
-        env:
-          DB_USER: dummy_user
-          DB_PASSWORD: dummy_password
-          DB_URI: neo4j://dummy_uri:7687
 
       - name: Lint
         run: npm run lint
