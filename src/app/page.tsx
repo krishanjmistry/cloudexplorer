@@ -45,7 +45,10 @@ export default function Home() {
 
   const { activeQuery, setActiveQuery } = useActiveGraph();
 
-  const { graphData, graphLoading, graphError } = useGraphData(activeQuery);
+  const { graphData, graphLoading, graphError } = useGraphData(
+    activeQuery,
+    globalRefreshKey,
+  );
 
   useEffect(() => {
     const handler = (ev: CardScenarioClickEvent) => {

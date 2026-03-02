@@ -127,12 +127,11 @@ function useActiveGraph() {
   } as const;
 }
 
-function useGraphData(query: GraphQuery | null) {
+function useGraphData(query: GraphQuery | null, refreshKey: number) {
   const { db } = useDuckDB();
   const { data, error, isLoading } = useSWR<GraphData | null>(
-    query && db ? [query, db] : null,
-    ([q, db]: [GraphQuery, AsyncDuckDB]) => fetchGraph(q, db),
-
+    query && db ? [query, db, refreshKey] : null,
+    ([q, db]: [GraphQuery, AsyncDuckDB, number]) => fetchGraph(q, db),
     { revalidateOnFocus: false },
   );
 
