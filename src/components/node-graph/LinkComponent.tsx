@@ -79,15 +79,6 @@ export const LinkComponent: React.FC<LinkProps> = ({
       unitDeltaY * Math.min(targetNodeRadius, euclideanDistance / 2 - 2),
   };
 
-  const detailSummary =
-    link.details && typeof link.details === "object"
-      ? Object.entries(link.details)
-          .filter(([, v]) => v)
-          .slice(0, 3)
-          .map(([k, v]) => `${k}: ${String(v)}`)
-          .join(" • ")
-      : "";
-
   let linkPath: string;
 
   const adjustedMidpointPosition: Coordinates = {
@@ -154,7 +145,7 @@ export const LinkComponent: React.FC<LinkProps> = ({
   const textTransform = shouldFlip
     ? `rotate(180 ${labelPosition.x} ${labelPosition.y})`
     : undefined;
-  const labelText = `${link.label || ""}${detailSummary ? ` — ${detailSummary}` : ""}`;
+  const labelText = link.label;
 
   return (
     <g className="link-group">
