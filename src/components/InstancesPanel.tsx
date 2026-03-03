@@ -140,108 +140,103 @@ const InstancesPanel: React.FC<InstancesPanelProps> = ({
     }
   };
 
-  if (!scenarioId) {
-    return (
-      <div className="w-full bg-white rounded-lg shadow-sm p-4 h-full overflow-y-scroll max-h-[600px]">
-        <div className="text-sm text-gray-600">
+  return (
+    <div className="relative w-full bg-white rounded-lg shadow-sm p-4 h-full overflow-y-scroll max-h-[600px] transition-all duration-200 ease-in-out">
+      {scenarioId ? (
+        <>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close panel"
+            title="Close"
+            className="absolute top-2 right-2 w-6 h-6 p-0 rounded-full text-gray-500 hover:text-error hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-500 z-10 inline-flex items-center justify-center transition-transform duration-150 hover:scale-125"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-4 h-4"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden="true"
+            >
+              <line x1="18" y1="6" x2="6" y2="18" />
+              <line x1="6" y1="6" x2="18" y2="18" />
+            </svg>
+            <span className="sr-only">Close panel</span>
+          </button>
+          <div className="items-center justify-between pr-6">
+            <h4 className="text-base grow font-semibold">{properties.title}</h4>
+            <p className={`text-gray-600 text-xs my-1`}>
+              {properties.description}
+            </p>
+
+            <p className="text-gray-500 text-xs my-2">
+              Remediation: {properties.remediation}
+            </p>
+
+            <button
+              className="text-sm px-3 py-1 bg-gray-300 hover:bg-gray-200 rounded"
+              onClick={onViewFullGraph}
+            >
+              View full graph
+            </button>
+          </div>
+
+          {instancesLoading && (
+            <div className="text-sm text-gray-500">Loading instances…</div>
+          )}
+          {instancesError && (
+            <div className="text-sm text-error">
+              {instancesError instanceof Error
+                ? instancesError.message
+                : String(instancesError)}
+            </div>
+          )}
+
+          {!instancesLoading && instances.length === 0 && (
+            <>
+              <div className="text-sm text-gray-600">
+                No matching resources found for this scenario.
+              </div>
+            </>
+          )}
+
+          {!instancesLoading && instances.length > 0 && (
+            <div className="overflow-x-auto">
+              <table className={`w-full text-xs table-fixed`}>
+                <thead>
+                  <tr className="text-left text-xs text-gray-500 border-b leading-4">
+                    {Object.keys(instances[0])
+                      .filter((key) => key !== "elementId")
+                      .map((key) => (
+                        <th key={key} className="py-1">
+                          {formatHeader(key)}
+                        </th>
+                      ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {instances.map((it, i) => (
+                    <InstanceRow
+                      key={i}
+                      instance={it}
+                      isCurrentlyVisualized={visualizedId === it.elementId}
+                      onVisualize={onVisualize}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="text-sm text-gray-500">
           Select a scenario to see affected resources here.
         </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="relative p-4 w-full bg-white rounded-lg shadow-sm h-full overflow-y-scroll max-h-[600px]">
-      <div className="-mx-4 -mt-4 p-4">
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close panel"
-          title="Close"
-          className="absolute top-2 right-2 w-6 h-6 p-0 rounded-full text-gray-500 hover:text-error hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-red-500 z-10 inline-flex items-center justify-center"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="w-4 h-4"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            aria-hidden="true"
-          >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-          <span className="sr-only">Close panel</span>
-        </button>
-        <div className="items-center justify-between pr-6">
-          <h4 className="text-base grow font-semibold">{properties.title}</h4>
-          <p className={`text-gray-600 text-xs my-1`}>
-            {properties.description}
-          </p>
-
-          <p className="text-gray-500 text-xs my-2">
-            Remediation: {properties.remediation}
-          </p>
-
-          <button
-            className="text-sm px-3 py-1 bg-gray-300 hover:bg-gray-200 rounded"
-            onClick={onViewFullGraph}
-          >
-            View full graph
-          </button>
-        </div>
-      </div>
-      <div className="">
-        {instancesLoading && (
-          <div className="text-sm text-gray-500">Loading instances…</div>
-        )}
-        {instancesError && (
-          <div className="text-sm text-error">
-            {instancesError instanceof Error
-              ? instancesError.message
-              : String(instancesError)}
-          </div>
-        )}
-
-        {!instancesLoading && instances.length === 0 && (
-          <>
-            <div className="text-sm text-gray-600">
-              No matching resources found for this scenario.
-            </div>
-          </>
-        )}
-
-        {!instancesLoading && instances.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className={`w-full text-xs table-fixed`}>
-              <thead>
-                <tr className="text-left text-xs text-gray-500 border-b leading-4">
-                  {Object.keys(instances[0])
-                    .filter((key) => key !== "elementId")
-                    .map((key) => (
-                      <th key={key} className="py-1">
-                        {formatHeader(key)}
-                      </th>
-                    ))}
-                </tr>
-              </thead>
-              <tbody>
-                {instances.map((it, i) => (
-                  <InstanceRow
-                    key={i}
-                    instance={it}
-                    isCurrentlyVisualized={visualizedId === it.elementId}
-                    onVisualize={onVisualize}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+      )}
     </div>
   );
 };
