@@ -60,13 +60,13 @@ export default function GraphToolbar({
   const disabledCriteria = !db || (!signedIn && !useLocalData);
 
   const graphToolbarButtonBaseStyles =
-    "text-xs font-mono px-3 py-1 bg-white text-black disabled:opacity-50 hover:bg-gray-100 rounded flex items-center gap-1 border-2 box-border justify-center";
+    "text-xs font-mono py-1 bg-white text-black disabled:opacity-50 hover:bg-gray-100 rounded flex items-center gap-1 border-2 box-border justify-center";
 
   const renderButtons = (
     <>
       <button
         type="button"
-        className={`${graphToolbarButtonBaseStyles} border-transparent`}
+        className={`${graphToolbarButtonBaseStyles} border-transparent pl-1 pr-1 sm:pr-3`}
         onClick={handleRefresh}
         disabled={disabledCriteria}
         title={
@@ -82,7 +82,7 @@ export default function GraphToolbar({
       </button>
       <button
         type="button"
-        className={`${graphToolbarButtonBaseStyles} border-transparent`}
+        className={`${graphToolbarButtonBaseStyles} border-transparent pl-1 pr-3`}
         onClick={async () => {
           setSelectedScenarioId(null);
           await setActiveQuery({ type: GraphQueryType.Full });
@@ -100,14 +100,14 @@ export default function GraphToolbar({
       </button>
       <button
         type="button"
-        className={`${graphToolbarButtonBaseStyles} border-transparent`}
+        className={`${graphToolbarButtonBaseStyles} border-transparent px-3`}
         onClick={() => setShowSafe((v) => !v)}
       >
         {showSafe ? `Hide safe` : `Show safe`}
       </button>
       <button
         type="button"
-        className={`${graphToolbarButtonBaseStyles} ${useLocalData ? "border-green-300!" : "border-transparent"}`}
+        className={`${graphToolbarButtonBaseStyles} ${useLocalData ? "border-green-300!" : "border-transparent"} px-3`}
         onClick={handleUseLocalDataChange}
         disabled={!db}
       >
