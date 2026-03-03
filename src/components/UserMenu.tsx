@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import SignInOverlay from "./SignInOverlay";
 
 export default function UserMenu() {
   const { authenticatedUser, signedIn, signOut } = useAuth();
   const [showMenu, setShowMenu] = useState<boolean>(false);
+  const [showSignIn, setShowSignIn] = useState<boolean>(false);
 
   const handleToggle = () => {
     setShowMenu((v) => !v);
@@ -14,8 +16,27 @@ export default function UserMenu() {
     setShowMenu(false);
   };
 
+  // TODO: could the SignInOverlay act more like the usermenu when the user is signed in?
   if (!signedIn || !authenticatedUser) {
-    return null;
+    return (
+      <>
+        <SignInOverlay
+          visible={showSignIn}
+          onClose={() => {
+            setShowSignIn(false);
+          }}
+        />
+        <button
+          type="button"
+          className="navbar-button"
+          onClick={() => {
+            setShowSignIn(true);
+          }}
+        >
+          Sign in
+        </button>
+      </>
+    );
   }
 
   const { provider, profile: user } = authenticatedUser;
