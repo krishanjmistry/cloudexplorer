@@ -339,8 +339,7 @@ const NodeGraph: React.FC<NodeGraphProps> = ({ width = 0, height, data }) => {
         position={tooltip.position}
       />
 
-      {/* Fit button - always visible */}
-      <div style={{ position: "absolute", right: 12, top: 12, zIndex: 50 }}>
+      <div style={{ position: "absolute", right: 12, top: 12 }}>
         <button
           onClick={() => {
             zoomToFit();
