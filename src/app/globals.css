@@ -91,3 +91,7 @@ h1 {
 button.navbar-button {
   @apply text-sm px-3 py-1 bg-white text-black disabled:opacity-50 w-40 hover:bg-gray-100 rounded;
 }
+
+button.graph-toolbar-button {
+  @apply text-sm px-3 py-1 bg-white text-black disabled:opacity-50 hover:bg-gray-100 rounded-4xl flex items-center gap-1 border-2 border-transparent box-border justify-center;
+}

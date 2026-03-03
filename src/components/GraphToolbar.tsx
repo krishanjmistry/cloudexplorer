@@ -4,6 +4,8 @@ import { GraphQueryType } from "../types";
 import { useActiveGraph } from "../hooks/useGraph";
 import { useAuth } from "../context/AuthContext";
 import { useDuckDB } from "../context/DuckDBContext";
+import { RefreshIcon } from "./graph-icons/RefreshIcon";
+import { FullGraphIcon } from "./graph-icons/FullGraphIcon";
 
 interface GraphToolbarProps {
   graphLoading: boolean;
@@ -42,8 +44,8 @@ export default function GraphToolbar({
     }
   };
 
-  const handleUseLocalDataChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setUseLocalData(e.target.checked);
+  const handleUseLocalDataChange = () => {
+    setUseLocalData((prev) => !prev);
     setSelectedScenarioId(null);
     setActiveQuery(null);
   };
@@ -53,13 +55,11 @@ export default function GraphToolbar({
 
   const disabledCriteria = !db || (!signedIn && !useLocalData);
 
-  const [mobileOpen, setMobileOpen] = useState(false);
-
   const renderButtons = (
     <>
       <button
         type="button"
-        className="navbar-button"
+        className="graph-toolbar-button"
         onClick={handleRefresh}
         disabled={disabledCriteria}
         title={
@@ -70,11 +70,12 @@ export default function GraphToolbar({
               : "DuckDB not available"
         }
       >
-        Refresh
+        <RefreshIcon className="w-4 h-4" />
+        <span className="hidden sm:inline">Refresh</span>
       </button>
       <button
         type="button"
-        className="navbar-button"
+        className="graph-toolbar-button"
         onClick={async () => {
           setSelectedScenarioId(null);
           await setActiveQuery({ type: GraphQueryType.Full });
@@ -87,38 +88,27 @@ export default function GraphToolbar({
             : "Query the entire graph (all nodes & relationships)"
         }
       >
-        {fullGraphLoading ? "Loading..." : "View full graph"}
+        <FullGraphIcon className="w-4 h-4" />
+        <span className="">
+          {fullGraphLoading ? "Loading..." : "Full graph"}
+        </span>
       </button>
-      <label className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={useLocalData}
-          disabled={!db}
-          onChange={handleUseLocalDataChange}
-        />
-        <span className="text-sm">Local mock data</span>
-      </label>
+      <button
+        type="button"
+        className={`graph-toolbar-button ${useLocalData ? "border-green-300!" : ""}`}
+        onClick={handleUseLocalDataChange}
+        disabled={!db}
+      >
+        Mock Data
+      </button>
     </>
   );
 
   return (
-    <div className="w-full bg-amber-300 shadow-sm px-4 py-3 flex flex-col">
-      <div className="flex items-center justify-center">
-        <div className="flex items-center gap-4"></div>
-        <button
-          className="md:hidden p-2"
-          onClick={() => setMobileOpen((v) => !v)}
-          aria-label="Toggle graph menu"
-        >
-          {mobileOpen ? "✕" : "☰"}
-        </button>
-        <nav className="hidden md:flex items-center gap-6">{renderButtons}</nav>
+    <div className="my-2 flex flex-col items-center justify-center">
+      <div className="bg-gray-300 shadow rounded-4xl flex gap-2 p-2">
+        {renderButtons}
       </div>
-      {mobileOpen && (
-        <nav className="md:hidden mt-2 flex flex-col gap-2">
-          {renderButtons}
-        </nav>
-      )}
     </div>
   );
 }
