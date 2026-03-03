@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 
-import { useDuckDB } from "../context/DuckDBContext";
 import DuckQueryConsole from "../components/DuckQueryConsole";
 import NodeGraph from "../components/NodeGraph";
 import Navbar from "../components/Navbar";
@@ -30,7 +29,6 @@ export function headers() {
 }
 
 export default function Home() {
-  const { db } = useDuckDB();
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(
     null,
   );
@@ -68,7 +66,6 @@ export default function Home() {
     <div className="min-h-screen w-screen flex flex-col items-center">
       <Navbar />
       <GraphToolbar
-        db={db}
         graphLoading={graphLoading}
         graphError={graphError}
         setGlobalRefreshKey={setGlobalRefreshKey}

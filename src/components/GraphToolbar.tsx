@@ -3,9 +3,9 @@ import { runAzureScanDuck } from "../app/_lib/duckIngestion/scannerDuck";
 import { GraphQueryType } from "../types";
 import { useActiveGraph } from "../hooks/useGraph";
 import { useAuth } from "../context/AuthContext";
+import { useDuckDB } from "../context/DuckDBContext";
 
 interface GraphToolbarProps {
-  db: any | null;
   graphLoading: boolean;
   graphError: any;
   setGlobalRefreshKey: React.Dispatch<React.SetStateAction<number>>;
@@ -13,12 +13,12 @@ interface GraphToolbarProps {
 }
 
 export default function GraphToolbar({
-  db,
   graphLoading,
   graphError,
   setGlobalRefreshKey,
   setSelectedScenarioId,
 }: GraphToolbarProps) {
+  const { db } = useDuckDB();
   const [useLocalData, setUseLocalData] = useState(false);
   const { signedIn, authenticatedUser } = useAuth();
   const { activeQuery, setActiveQuery } = useActiveGraph();
