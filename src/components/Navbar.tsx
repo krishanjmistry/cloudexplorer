@@ -1,4 +1,4 @@
-import CloudIcon from "./CloudIcon";
+import CloudIcon from "./graph-icons/CloudIcon";
 import UserMenu from "./UserMenu";
 
 export default function Navbar() {
