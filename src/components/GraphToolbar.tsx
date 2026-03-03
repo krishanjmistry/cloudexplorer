@@ -12,6 +12,8 @@ interface GraphToolbarProps {
   graphError: any;
   setGlobalRefreshKey: React.Dispatch<React.SetStateAction<number>>;
   setSelectedScenarioId: React.Dispatch<React.SetStateAction<string | null>>;
+  showSafe: boolean;
+  setShowSafe: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export default function GraphToolbar({
@@ -19,6 +21,8 @@ export default function GraphToolbar({
   graphError,
   setGlobalRefreshKey,
   setSelectedScenarioId,
+  showSafe,
+  setShowSafe,
 }: GraphToolbarProps) {
   const { db } = useDuckDB();
   const [useLocalData, setUseLocalData] = useState(false);
@@ -89,9 +93,14 @@ export default function GraphToolbar({
         }
       >
         <FullGraphIcon className="w-4 h-4" />
-        <span className="">
-          {fullGraphLoading ? "Loading..." : "Full graph"}
-        </span>
+        {fullGraphLoading ? "Loading..." : "Full graph"}
+      </button>
+      <button
+        type="button"
+        className="graph-toolbar-button"
+        onClick={() => setShowSafe((v) => !v)}
+      >
+        {showSafe ? `Hide safe` : `Show safe`}
       </button>
       <button
         type="button"

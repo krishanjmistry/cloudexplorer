@@ -36,6 +36,7 @@ export default function Home() {
   const { stats } = useStats(globalRefreshKey);
 
   const { activeQuery, setActiveQuery } = useActiveGraph();
+  const [showSafe, setShowSafe] = useState(false);
 
   const { graphData, graphLoading, graphError } = useGraphData(
     activeQuery,
@@ -70,9 +71,11 @@ export default function Home() {
         graphError={graphError}
         setGlobalRefreshKey={setGlobalRefreshKey}
         setSelectedScenarioId={setSelectedScenarioId}
+        showSafe={showSafe}
+        setShowSafe={setShowSafe}
       />
       <main className="p-4 w-full">
-        <RiskDashboard refreshKey={globalRefreshKey} />
+        <RiskDashboard refreshKey={globalRefreshKey} showSafe={showSafe} />
 
         <div className="w-full max-w-full grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
           {!isFullGraphView && (
