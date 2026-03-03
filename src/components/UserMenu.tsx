@@ -104,68 +104,65 @@ export default function UserMenu() {
     };
   }, [showMenu]);
 
+  const navbarButtonBaseStyles =
+    "text-sm px-1 py-1 bg-white text-black disabled:opacity-50 hover:bg-gray-100 rounded";
+
   if (!signedIn || !authenticatedUser) {
     return (
       <>
+        <div
+          className={`fixed inset-0 bg-black transition-opacity duration-300 pointer-events-none -z-10 ${showMenu ? "opacity-30" : "opacity-0"}`}
+        />
         <div className="relative" ref={containerRef}>
           <button
             type="button"
-            className="navbar-button font-mono flex items-center gap-1 relative"
+            className={`${navbarButtonBaseStyles} font-mono flex items-center gap-1 relative`}
             onClick={handleToggle}
           >
             <UserIcon className="w-6 h-6 hidden sm:inline" />
             <span className="px-2">Sign in</span>
           </button>
-          {showMenu && (
-            <>
-              <div className="fixed inset-0 bg-black opacity-30 -z-10" />
-              <div className="text-sm absolute right-0 mt-1 bg-white rounded shadow-lg border border-gray-100 text-gray-700 font-mono px-3 py-3 min-w-[36ch]">
-                <form onSubmit={handleSubmit(handleSignInSubmit)}>
-                  <label className="flex flex-col mb-4">
-                    <span className="font-semibold">Provider</span>
-                    <select
-                      {...register("provider")}
-                      className="input-field bg-gray-100 p-1 rounded"
-                    >
-                      <option value="azure">Azure</option>
-                      <option value="aws">AWS (not yet)</option>
-                      <option value="gcp">GCP (not yet)</option>
-                    </select>
-                  </label>
+          <div
+            className={`text-sm absolute right-0 mt-1 bg-white rounded shadow-lg border border-gray-100 text-gray-700 font-mono px-3 py-3 min-w-[36ch] transform origin-top-right transition-all duration-150 ${
+              showMenu
+                ? "opacity-100 scale-100"
+                : "opacity-0 scale-95 pointer-events-none"
+            }`}
+          >
+            <form onSubmit={handleSubmit(handleSignInSubmit)}>
+              <label className="flex flex-col mb-4">
+                <span className="font-semibold">Provider</span>
+                <select
+                  {...register("provider")}
+                  className="input-field bg-gray-100 p-1 rounded"
+                >
+                  <option value="azure">Azure</option>
+                  <option value="aws">AWS (not yet)</option>
+                  <option value="gcp">GCP (not yet)</option>
+                </select>
+              </label>
 
-                  {providerFields[selectedProvider]?.map((field) => (
-                    <label key={field.name} className="flex flex-col mb-4">
-                      <span className="font-semibold">{field.label}</span>
-                      <input
-                        {...register(field.name, { required: field.required })}
-                        type={field.type || "text"}
-                        className="input-field bg-gray-100 rounded p-1 min-w-[37ch]"
-                        placeholder={field.placeholder}
-                        value={field.defaultValue}
-                      />
-                    </label>
-                  ))}
+              {providerFields[selectedProvider]?.map((field) => (
+                <label key={field.name} className="flex flex-col mb-4">
+                  <span className="font-semibold">{field.label}</span>
+                  <input
+                    {...register(field.name, { required: field.required })}
+                    type={field.type || "text"}
+                    className="input-field bg-gray-100 rounded p-1 min-w-[37ch]"
+                    placeholder={field.placeholder}
+                    value={field.defaultValue}
+                  />
+                </label>
+              ))}
 
-                  <div className="grid grid-cols-2 gap-2">
-                    {/* TODO: do we need cancel button */}
-                    <button
-                      type="button"
-                      className="bg-gray-200 text-black rounded p-1 hover:bg-gray-400"
-                      onClick={() => setShowMenu(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="bg-black text-white rounded p-1 hover:bg-gray-800"
-                    >
-                      Sign in
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </>
-          )}
+              <button
+                type="submit"
+                className="bg-black text-white rounded p-1 hover:bg-gray-800 w-full"
+              >
+                Sign in
+              </button>
+            </form>
+          </div>
         </div>
       </>
     );
@@ -175,37 +172,41 @@ export default function UserMenu() {
 
   return (
     <>
+      <div
+        className={`fixed inset-0 bg-black transition-opacity duration-300 pointer-events-none -z-10 ${showMenu ? "opacity-30" : "opacity-0"}`}
+      />
       <div className="relative" ref={containerRef}>
         <button
           type="button"
-          className="navbar-button font-mono flex items-center gap-1"
+          className={`${navbarButtonBaseStyles} font-mono flex items-center gap-1`}
           onClick={handleToggle}
         >
           <UserIcon className="w-6 h-6" />
           <span className="hidden sm:inline px-2">Connected to {provider}</span>
         </button>
-        {showMenu && (
-          <>
-            <div className="fixed inset-0 bg-black opacity-30 -z-10" />
-            <div className="text-sm absolute right-0 mt-1 w-48 bg-white rounded shadow-lg border border-gray-100 text-gray-700 font-mono">
-              <div className="text-sm px-4 py-3 border-b border-gray-100">
-                <p>Signed in as:</p>
-                <p className="font-semibold">
-                  {user.displayName || user.userPrincipalName}
-                </p>
-              </div>
-              <div className="text-sm px-4 py-3 border-b border-gray-100">
-                <p>Provider: {provider}</p>
-              </div>
-              <button
-                className="text-sm px-4 py-3 w-full text-left hover:bg-gray-100"
-                onClick={handleSignOut}
-              >
-                Sign out
-              </button>
-            </div>
-          </>
-        )}
+        <div
+          className={`text-sm absolute right-0 mt-1 w-48 bg-white rounded shadow-lg border border-gray-100 text-gray-700 font-mono transform origin-top-right transition-all duration-150 ${
+            showMenu
+              ? "opacity-100 scale-100"
+              : "opacity-0 scale-95 pointer-events-none"
+          }`}
+        >
+          <div className="text-sm px-4 py-3 border-b border-gray-100">
+            <p>Signed in as:</p>
+            <p className="font-semibold">
+              {user.displayName || user.userPrincipalName}
+            </p>
+          </div>
+          <div className="text-sm px-4 py-3 border-b border-gray-100">
+            <p>Provider: {provider}</p>
+          </div>
+          <button
+            className="text-sm px-4 py-3 w-full text-left hover:bg-gray-100"
+            onClick={handleSignOut}
+          >
+            Sign out
+          </button>
+        </div>
       </div>
     </>
   );

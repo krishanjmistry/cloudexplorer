@@ -86,7 +86,3 @@ h1 {
     transform 120ms cubic-bezier(0.2, 0.8, 0.2, 1),
     opacity 120ms ease;
 }
-
-button.navbar-button {
-  @apply text-sm px-1 py-1 bg-white text-black disabled:opacity-50 hover:bg-gray-100 rounded;
-}
