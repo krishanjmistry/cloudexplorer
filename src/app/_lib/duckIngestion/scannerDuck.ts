@@ -30,7 +30,7 @@ import { ResourceGraphClient } from "@azure/arm-resourcegraph";
 
 async function prepareAzureResources(
   credential: TokenCredential | null = null,
-  local: boolean
+  local: boolean,
 ) {
   let containers: AzureResourceRow[];
   let resources: AzureResourceRow[];
@@ -115,9 +115,12 @@ async function prepareAzureResources(
 export async function runAzureScanDuck(
   db: duckdb.AsyncDuckDB,
   credential: TokenCredential | null = null,
-  local: boolean
+  local: boolean,
 ) {
-  const { resources, relationships } = await prepareAzureResources(credential, local);
+  const { resources, relationships } = await prepareAzureResources(
+    credential,
+    local,
+  );
 
   const conn = await db.connect();
   try {
