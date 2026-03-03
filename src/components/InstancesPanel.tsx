@@ -2,7 +2,7 @@ import { useCallback, useState } from "react";
 import useSWR from "swr";
 import { ScenarioInstanceRow } from "../types/scenario-instances";
 import { InstanceRow } from "./InstanceRow";
-import { SCENARIOS } from "../app/_lib/queries";
+import { Scenario, SCENARIOS } from "../app/_lib/queries";
 import { useActiveGraph } from "@/src/hooks/useGraph";
 import { GraphQueryType } from "@/src/types";
 import { useDuckDB } from "../context/DuckDBContext";
@@ -29,6 +29,16 @@ interface InstancesPanelProps {
   onClose: () => void;
 }
 
+function getInstancesQuery(scenario: Scenario): string {
+  return `
+    SELECT 
+    ${scenario.elementId} AS elementId, ${scenario.instanceMapping
+      .map((m) => m.reference + " AS " + m.displayName)
+      .join(", ")}
+    FROM (${scenario.mainQuery})
+  `;
+}
+
 const postFetcher = async ({ db, id }: { db: AsyncDuckDB; id: string }) => {
   const conn = await db.connect();
   try {
@@ -37,31 +47,13 @@ const postFetcher = async ({ db, id }: { db: AsyncDuckDB; id: string }) => {
       throw new Error(`Scenario with id ${id} not found`);
     }
 
-    function getInstancesQuery(): string {
-      // start with the mainQuery
-      const mainQuery = scenario.mainQuery;
-      // extract elementId
-      const elementIdReference = scenario.elementId;
-      const instanceMapping = scenario.instanceMapping;
-
-      // concatenate the query in the form of :
-      const queryString = `
-        SELECT 
-        ${elementIdReference} AS elementId, ${instanceMapping
-          .map((m) => m.reference + " AS " + m.displayName)
-          .join(", ")}
-        FROM (${mainQuery})
-      `;
-      return queryString;
-    }
-
-    // const res = await conn.query(scenario.instancesSql);
-    const queryStr = getInstancesQuery();
-    console.log("Running instances query:", queryStr);
+    const queryStr = getInstancesQuery(scenario);
     const res = await conn.query(queryStr);
+
     const rows = res
       .toArray()
       .map((r) => r.toJSON() as Record<string, unknown>);
+
     const inst: ScenarioInstanceRow[] = rows.map((r) => {
       const elementId = String(r.elementId ?? "");
       delete r.elementId;
@@ -195,7 +187,7 @@ const InstancesPanel: React.FC<InstancesPanelProps> = ({
           </p>
 
           <button
-            className="text-sm px-3 py-1 bg-gray-300 hover:bg-gray-300"
+            className="text-sm px-3 py-1 bg-gray-300 hover:bg-gray-200 rounded"
             onClick={onViewFullGraph}
           >
             View full graph
