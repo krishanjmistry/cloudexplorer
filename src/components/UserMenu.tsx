@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import SignInOverlay from "./SignInOverlay";
+import { UserIcon } from "./graph-icons/UserIcon";
 
 export default function UserMenu() {
   const { authenticatedUser, signedIn, signOut } = useAuth();
@@ -28,12 +29,13 @@ export default function UserMenu() {
         />
         <button
           type="button"
-          className="navbar-button"
+          className="navbar-button font-mono flex items-center gap-1"
           onClick={() => {
             setShowSignIn(true);
           }}
         >
-          Sign in
+          <UserIcon className="w-6 h-6 hidden sm:inline" />
+          <span className="px-2">Sign in</span>
         </button>
       </>
     );
@@ -45,13 +47,14 @@ export default function UserMenu() {
     <div className="relative">
       <button
         type="button"
-        className="navbar-button font-semibold"
+        className="navbar-button font-mono flex items-center gap-1"
         onClick={handleToggle}
       >
-        Connected to {provider}
+        <UserIcon className="w-6 h-6" />
+        <span className="hidden sm:inline px-2">Connected to {provider}</span>
       </button>
       {showMenu && (
-        <div className="absolute right-0 mt-1 w-48 bg-white rounded shadow-lg z-40 border border-gray-100 text-gray-700">
+        <div className="absolute right-0 mt-1 w-48 bg-white rounded shadow-lg z-40 border border-gray-100 text-gray-700 font-mono">
           <div className="text-sm px-4 py-3 border-b border-gray-100">
             <p>Signed in as:</p>
             <p className="font-semibold">
