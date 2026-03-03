@@ -30,8 +30,8 @@ import { ResourceGraphClient } from "@azure/arm-resourcegraph";
 
 async function prepareAzureResources(
   credential: TokenCredential | null = null,
+  local: boolean
 ) {
-  const local = process.env.NEXT_PUBLIC_USE_LOCAL_DATA === "true";
   let containers: AzureResourceRow[];
   let resources: AzureResourceRow[];
   let authRows: RoleDefinitionAssignedRow[];
@@ -115,8 +115,9 @@ async function prepareAzureResources(
 export async function runAzureScanDuck(
   db: duckdb.AsyncDuckDB,
   credential: TokenCredential | null = null,
+  local: boolean
 ) {
-  const { resources, relationships } = await prepareAzureResources(credential);
+  const { resources, relationships } = await prepareAzureResources(credential, local);
 
   const conn = await db.connect();
   try {

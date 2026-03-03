@@ -24,7 +24,6 @@ export default function GraphToolbar({
   const { activeQuery, setActiveQuery } = useActiveGraph();
 
   const handleRefresh = async () => {
-    // TODO: handle local data refresh
     if (!db) {
       console.warn("DuckDB not initialised yet");
       return;
@@ -34,6 +33,7 @@ export default function GraphToolbar({
       const result = await runAzureScanDuck(
         db,
         authenticatedUser?.credential ?? null,
+        useLocalData,
       );
       console.log("Scan finished", result);
       setGlobalRefreshKey((k) => k + 1);
