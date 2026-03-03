@@ -1,4 +1,4 @@
-import React from "react";
+import { useState } from "react";
 import { runAzureScanDuck } from "../app/_lib/duckIngestion/scannerDuck";
 import { GraphQueryType } from "../types";
 import { useActiveGraph } from "../hooks/useGraph";
@@ -8,8 +8,6 @@ interface GraphToolbarProps {
   db: any | null;
   graphLoading: boolean;
   graphError: any;
-  useLocalData: boolean;
-  setUseLocalData: React.Dispatch<React.SetStateAction<boolean>>;
   setGlobalRefreshKey: React.Dispatch<React.SetStateAction<number>>;
   setSelectedScenarioId: React.Dispatch<React.SetStateAction<string | null>>;
 }
@@ -18,11 +16,10 @@ export default function GraphToolbar({
   db,
   graphLoading,
   graphError,
-  useLocalData,
-  setUseLocalData,
   setGlobalRefreshKey,
   setSelectedScenarioId,
 }: GraphToolbarProps) {
+  const [useLocalData, setUseLocalData] = useState(false);
   const { signedIn, authenticatedUser } = useAuth();
   const { activeQuery, setActiveQuery } = useActiveGraph();
 
@@ -45,12 +42,18 @@ export default function GraphToolbar({
     }
   };
 
+  const handleUseLocalDataChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setUseLocalData(e.target.checked);
+    setSelectedScenarioId(null);
+    setActiveQuery(null);
+  };
+
   const fullGraphLoading =
     graphLoading && activeQuery?.type === GraphQueryType.Full;
 
   const disabledCriteria = !db || (!signedIn && !useLocalData);
 
-  const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const renderButtons = (
     <>
@@ -91,7 +94,7 @@ export default function GraphToolbar({
           type="checkbox"
           checked={useLocalData}
           disabled={!db}
-          onChange={(e) => setUseLocalData(e.target.checked)}
+          onChange={handleUseLocalDataChange}
         />
         <span className="text-sm">Local mock data</span>
       </label>

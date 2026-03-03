@@ -38,12 +38,6 @@ export default function Home() {
   const { stats } = useStats(globalRefreshKey);
 
   const { activeQuery, setActiveQuery } = useActiveGraph();
-  const [useLocalData, setUseLocalData] = useState(false);
-
-  // clear any existing query when toggling into local mode
-  useEffect(() => {
-    setActiveQuery(null);
-  }, [useLocalData]);
 
   const { graphData, graphLoading, graphError } = useGraphData(
     activeQuery,
@@ -77,8 +71,6 @@ export default function Home() {
         db={db}
         graphLoading={graphLoading}
         graphError={graphError}
-        useLocalData={useLocalData}
-        setUseLocalData={setUseLocalData}
         setGlobalRefreshKey={setGlobalRefreshKey}
         setSelectedScenarioId={setSelectedScenarioId}
       />
