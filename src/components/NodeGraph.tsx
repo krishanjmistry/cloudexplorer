@@ -339,24 +339,15 @@ const NodeGraph: React.FC<NodeGraphProps> = ({ width = 0, height, data }) => {
         position={tooltip.position}
       />
 
-      <div style={{ position: "absolute", right: 12, top: 12 }}>
-        <button
-          onClick={() => {
-            zoomToFit();
-          }}
-          title="Center & zoom to focused resources"
-          style={{
-            background: "#111827",
-            color: "white",
-            border: "1px solid #374151",
-            padding: "6px 12px",
-            fontSize: 12,
-            cursor: "pointer",
-          }}
-        >
-          Fit
-        </button>
-      </div>
+      <button
+        onClick={() => {
+          zoomToFit();
+        }}
+        title="Center & zoom to focused resources"
+        className="absolute right-3 top-3 text-white bg-gray-700 px-3 py-1.5 text-xs rounded hover:bg-gray-600"
+      >
+        Fit
+      </button>
     </div>
   );
 };
