@@ -1,13 +1,16 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
 import * as duckdb from "@duckdb/duckdb-wasm";
+import { runAzureScanDuck } from "../app/_lib/duckIngestion/scannerDuck";
 import { ensureSchema } from "../app/_lib/duckIngestion/constraints";
 
 interface DuckDBState {
   db: duckdb.AsyncDuckDB | null;
   loading: boolean;
   error: Error | null;
+  useLocal: boolean;
+  toggleLocalData: () => Promise<void>;
 }
 
 const DuckDBContext = createContext<DuckDBState | undefined>(undefined);
@@ -18,6 +21,10 @@ export const DuckDBProvider: React.FC<{ children: React.ReactNode }> = ({
   const [db, setDb] = useState<duckdb.AsyncDuckDB | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+
+  const [useLocal, setUseLocal] = useState(false);
+  const liveDumpRef = useRef<duckdb.WebFile[] | null>(null);
+  const mockDumpRef = useRef<duckdb.WebFile[] | null>(null);
 
   useEffect(() => {
     let isCancelled = false;
@@ -49,9 +56,11 @@ export const DuckDBProvider: React.FC<{ children: React.ReactNode }> = ({
 
         const conn = await database.connect();
         try {
-          await ensureSchema(conn);
+          await ensureSchema(conn).catch((err) => {
+            console.error("Failed to ensure DuckDB schema", err);
+          });
         } finally {
-          conn.close();
+          await conn.close();
         }
 
         if (!isCancelled) {
@@ -72,14 +81,69 @@ export const DuckDBProvider: React.FC<{ children: React.ReactNode }> = ({
 
     return () => {
       isCancelled = true;
-      if (database) {
-        database.terminate();
-      }
-      if (worker) {
-        worker.terminate();
-      }
+      (async () => {
+        if (database) {
+          await database.terminate();
+        }
+        if (worker) {
+          await worker.terminate();
+        }
+      })();
     };
   }, []);
+
+  const toggleLocalData = async () => {
+    if (!db) {
+      return;
+    }
+
+    setLoading(true);
+
+    const conn = await db.connect();
+    try {
+      if (useLocal) {
+        await conn.query(
+          `EXPORT DATABASE 'exported_db_local' (FORMAT PARQUET);`,
+        );
+        const globFiles = await db.globFiles(`exported_db_local/*`);
+        mockDumpRef.current = globFiles;
+      } else {
+        await conn.query(
+          `EXPORT DATABASE 'exported_db_live' (FORMAT PARQUET);`,
+        );
+        const globFiles = await db.globFiles(`exported_db_live/*`);
+        liveDumpRef.current = globFiles;
+      }
+
+      // clear database tables
+      await conn.query(`DROP SEQUENCE resource_uid_seq CASCADE;`);
+      await conn.query(`DROP TABLE IF EXISTS resource_rel;`);
+
+      if (!useLocal) {
+        if (mockDumpRef.current) {
+          await conn.query(`IMPORT DATABASE 'exported_db_local';`);
+          const fileNames = mockDumpRef.current.map((f) => f.fileName);
+          await conn.bindings.dropFiles(fileNames);
+        } else {
+          await ensureSchema(conn);
+          await runAzureScanDuck(db, null, true);
+        }
+      } else {
+        if (liveDumpRef.current) {
+          await conn.query(`IMPORT DATABASE 'exported_db_live';`);
+          const fileNames = liveDumpRef.current.map((f) => f.fileName);
+          await conn.bindings.dropFiles(fileNames);
+        } else {
+          await ensureSchema(conn);
+        }
+      }
+
+      setUseLocal((prev) => !prev);
+    } finally {
+      await conn.close();
+      setLoading(false);
+    }
+  };
 
   return (
     <DuckDBContext.Provider
@@ -87,6 +151,8 @@ export const DuckDBProvider: React.FC<{ children: React.ReactNode }> = ({
         db,
         loading,
         error,
+        useLocal,
+        toggleLocalData,
       }}
     >
       {children}

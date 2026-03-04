@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { runAzureScanDuck } from "../app/_lib/duckIngestion/scannerDuck";
 import { GraphQueryType } from "../types";
 import { useActiveGraph } from "../hooks/useGraph";
@@ -24,8 +23,7 @@ export default function GraphToolbar({
   showSafe,
   setShowSafe,
 }: GraphToolbarProps) {
-  const { db } = useDuckDB();
-  const [useLocalData, setUseLocalData] = useState(false);
+  const { db, useLocal, toggleLocalData } = useDuckDB();
   const { signedIn, authenticatedUser } = useAuth();
   const { activeQuery, setActiveQuery } = useActiveGraph();
 
@@ -39,7 +37,7 @@ export default function GraphToolbar({
       const result = await runAzureScanDuck(
         db,
         authenticatedUser?.credential ?? null,
-        useLocalData,
+        useLocal,
       );
       console.log("Scan finished", result);
       setGlobalRefreshKey((k) => k + 1);
@@ -48,16 +46,18 @@ export default function GraphToolbar({
     }
   };
 
-  const handleUseLocalDataChange = () => {
-    setUseLocalData((prev) => !prev);
+  const handleUseLocalDataChange = async () => {
     setSelectedScenarioId(null);
     setActiveQuery(null);
+    await toggleLocalData().then(() => {
+      setGlobalRefreshKey((k) => k + 1);
+    });
   };
 
   const fullGraphLoading =
     graphLoading && activeQuery?.type === GraphQueryType.Full;
 
-  const disabledCriteria = !db || (!signedIn && !useLocalData);
+  const disabledCriteria = !db || (!signedIn && !useLocal);
 
   const graphToolbarButtonBaseStyles =
     "text-xs font-mono py-1 bg-white text-black disabled:opacity-50 hover:bg-gray-100 rounded flex items-center gap-1 border-2 box-border justify-center";
@@ -107,7 +107,7 @@ export default function GraphToolbar({
       </button>
       <button
         type="button"
-        className={`${graphToolbarButtonBaseStyles} ${useLocalData ? "border-green-300!" : "border-transparent"} px-3`}
+        className={`${graphToolbarButtonBaseStyles} ${useLocal ? "border-green-300!" : "border-transparent"} px-3`}
         onClick={handleUseLocalDataChange}
         disabled={!db}
       >
