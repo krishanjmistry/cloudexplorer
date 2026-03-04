@@ -36,10 +36,10 @@ async function statsFetcher({ db }: { db: AsyncDuckDB }): Promise<Stat[]> {
 }
 
 function useStats(refreshKey: number) {
-  const { db } = useDuckDB();
+  const { db, loading } = useDuckDB();
 
   const { data, error, isLoading } = useSWR<Stat[]>(
-    db ? { db, refreshKey } : null,
+    db && !loading ? { db, refreshKey } : null,
     statsFetcher,
   );
 
