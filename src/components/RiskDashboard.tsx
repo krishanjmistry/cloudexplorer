@@ -72,7 +72,7 @@ const RiskCard: React.FC<RiskCardProps> = ({ id, title, count, severity }) => {
         <div>
           <h3 className={`font-bold text-gray-800`}>{title}</h3>
         </div>
-        <div className={`flex flex-col items-end ml-4`}>
+        <div className={`flex flex-col items-end ml-4 font-mono`}>
           <span
             className={`${styles.bg} ${styles.text} text-lg px-2 py-0.5 font-bold rounded-full`}
           >
