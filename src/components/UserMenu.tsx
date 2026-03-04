@@ -141,7 +141,17 @@ export default function UserMenu() {
                   <option value="gcp">GCP (not yet)</option>
                 </select>
               </label>
-
+              <a
+                href="https://github.com/krishanjmistry/cloudexplorer?tab=readme-ov-file#configuring-sign-in"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block mb-4 text-xs"
+              >
+                <p className="mb-4 text-xs text-gray-600">
+                  <strong>First time?</strong>
+                  <br /> See how to configure sign-in <strong>here</strong>
+                </p>
+              </a>
               {providerFields[selectedProvider]?.map((field) => (
                 <label key={field.name} className="flex flex-col mb-4">
                   <span className="font-semibold">{field.label}</span>
@@ -154,7 +164,6 @@ export default function UserMenu() {
                   />
                 </label>
               ))}
-
               <button
                 type="submit"
                 className="bg-black text-white rounded p-1 hover:bg-gray-800 w-full"
