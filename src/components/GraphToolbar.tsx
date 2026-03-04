@@ -9,7 +9,7 @@ import { FullGraphIcon } from "./graph-icons/FullGraphIcon";
 
 interface GraphToolbarProps {
   graphLoading: boolean;
-  graphError: any;
+  graphError: unknown;
   setGlobalRefreshKey: React.Dispatch<React.SetStateAction<number>>;
   setSelectedScenarioId: React.Dispatch<React.SetStateAction<string | null>>;
   showSafe: boolean;
