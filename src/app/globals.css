@@ -25,27 +25,6 @@ body {
   font-family: Inter, Arial, Helvetica, sans-serif;
 }
 
-.container {
-  padding: 0 2rem;
-}
-
-.main {
-  min-height: 100vh;
-  padding: 2rem 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-h1 {
-  color: #333;
-}
-
-.graph-wrapper {
-  display: flex;
-  justify-content: center;
-}
-
 /* --- Graph-specific styles --- */
 .link {
   stroke: #999;
@@ -53,6 +32,7 @@ h1 {
 }
 
 .node-label {
+  @apply font-mono;
   font-size: 10px;
   pointer-events: none;
   text-shadow:
@@ -63,26 +43,13 @@ h1 {
 }
 
 .link-label {
+  @apply font-mono;
   font-size: 9px;
   fill: #555;
   pointer-events: none;
 }
 
 .tooltip {
-  position: absolute;
-  text-align: left;
-  padding: 8px;
-  font-size: 12px;
-  background: lightsteelblue;
-  border-radius: 8px;
-  pointer-events: none; /* Important so it doesn't block mouse events on the SVG */
-  opacity: 0.95;
-  z-index: 50;
-  box-shadow: 0 6px 20px rgba(16, 24, 40, 0.12);
-  max-width: 320px;
-  word-break: break-word;
+  @apply font-mono bg-gray-300/90 absolute p-3 rounded shadow text-xs z-1 text-left pointer-events-none max-w-64 break-all;
   transform-origin: 0 0;
-  transition:
-    transform 120ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    opacity 120ms ease;
 }
