@@ -44,19 +44,19 @@ export default function DuckQueryConsole() {
   }
 
   return (
-    <section className="p-4 border rounded shadow-sm w-[800px]">
-      <h2 className="text-xl font-bold mb-4">DuckDB console</h2>
+    <section className="p-4 bg-white rounded shadow-sm w-full font-mono">
+      <h2 className="text-xl font-bold mb-4">DuckDB Query Console</h2>
 
       <form onSubmit={handleSubmit} className="mb-4">
         <textarea
-          className="w-full p-2 border"
+          className="w-full p-2 bg-gray-100 rounded"
           rows={4}
           value={sql}
           onChange={(e) => setSql(e.target.value)}
         />
         <button
           type="submit"
-          className="mt-2 px-3 py-1 bg-blue-600 text-white rounded"
+          className="mt-2 px-3 py-1 bg-black text-white rounded"
           disabled={running}
         >
           {running ? "Running…" : "Run"}

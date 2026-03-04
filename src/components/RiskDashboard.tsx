@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useStats } from "../hooks/useStats";
 
 declare global {
@@ -98,11 +97,15 @@ const SEVERITY_ORDER: Record<string, number> = {
   Safe: 4,
 };
 
-const RiskDashboard = ({ refreshKey }: { refreshKey: number }) => {
+const RiskDashboard = ({
+  refreshKey,
+  showSafe,
+}: {
+  refreshKey: number;
+  showSafe: boolean;
+}) => {
   // TODO: handle stats loading and error states in the UI
   const { stats } = useStats(refreshKey);
-
-  const [showSafe, setShowSafe] = useState(false);
 
   const sorted = [...stats].sort((a, b) => {
     const sa = SEVERITY_ORDER[a.severity] ?? 99;
@@ -122,27 +125,6 @@ const RiskDashboard = ({ refreshKey }: { refreshKey: number }) => {
 
   return (
     <>
-      <div className={`flex items-center justify-end mb-3 w-full`}>
-        <div className="flex items-center gap-3">
-          {/* TODO: layout shift on button */}
-          <button
-            type="button"
-            className="text-sm px-3 py-1 rounded border hover:bg-gray-50"
-            onClick={() => setShowSafe((v) => !v)}
-            aria-pressed={showSafe}
-            aria-label={
-              showSafe
-                ? `Hide safe (${safeGroup.length})`
-                : `Show safe (${safeGroup.length})`
-            }
-          >
-            {showSafe
-              ? `Hide safe (${safeGroup.length})`
-              : `Show safe (${safeGroup.length})`}
-          </button>
-        </div>
-      </div>
-
       <div>
         {/* TODO: layout shift on Risk Dashboard cards */}
         {visible.length === 0 && safeGroup.length === 0 && (
