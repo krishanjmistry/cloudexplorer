@@ -5,7 +5,7 @@ interface CloudIconProps extends React.SVGProps<SVGSVGElement> {
 }
 
 export default function CloudIcon({
-  bgColor = "#FFF",
+  bgColor = "#000",
   ...props
 }: CloudIconProps) {
   return (
@@ -13,71 +13,49 @@ export default function CloudIcon({
       viewBox="0 0 64 64"
       width="64"
       height="64"
-      fill="currentColor"
+      fill="none"
       xmlns="http://www.w3.org/2000/svg"
       {...props}
     >
-      <circle cx="32" cy="32" r="32" fill={bgColor} />
+      {/* Network Graph Lines (Drawn first so they sit cleanly behind the cloud and nodes) */}
+      <g
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        {/* Central Trunk */}
+        <line x1="32" y1="35" x2="32" y2="43" />
 
-      <g fill="currentColor">
-        <path d="M16 16a12 12 0 0 1 23 0h5a9 9 0 0 1 0 18H16a7 7 0 0 1 0-14z" />
+        {/* Level 1 Routing */}
+        <line x1="32" y1="43" x2="20" y2="51" />
+        <line x1="32" y1="43" x2="44" y2="51" />
+
+        {/* Level 2 Routing (Perfectly Symmetrical) */}
+        <line x1="20" y1="51" x2="14" y2="59" />
+        <line x1="20" y1="51" x2="26" y2="59" />
+        <line x1="44" y1="51" x2="38" y2="59" />
+        <line x1="44" y1="51" x2="50" y2="59" />
       </g>
+
+      {/* Cloud Object (Drawn over the trunk line to absorb it seamlessly) */}
       <g fill="currentColor">
-        <circle cx="32" cy="38" r="3" />
-        <circle cx="24" cy="48" r="3" />
-        <circle cx="40" cy="48" r="3" />
-        <circle cx="20" cy="56" r="3" />
-        <circle cx="28" cy="56" r="3" />
-        <circle cx="36" cy="56" r="3" />
-        <circle cx="44" cy="56" r="3" />
-        <line
-          x1="32"
-          y1="38"
-          x2="24"
-          y2="48"
-          stroke="currentColor"
-          strokeWidth="2"
-        />
-        <line
-          x1="32"
-          y1="38"
-          x2="40"
-          y2="48"
-          stroke="currentColor"
-          strokeWidth="2"
-        />
-        <line
-          x1="24"
-          y1="48"
-          x2="20"
-          y2="56"
-          stroke="currentColor"
-          strokeWidth="2"
-        />
-        <line
-          x1="24"
-          y1="48"
-          x2="28"
-          y2="56"
-          stroke="currentColor"
-          strokeWidth="2"
-        />
-        <line
-          x1="40"
-          y1="48"
-          x2="36"
-          y2="56"
-          stroke="currentColor"
-          strokeWidth="2"
-        />
-        <line
-          x1="40"
-          y1="48"
-          x2="44"
-          y2="56"
-          stroke="currentColor"
-          strokeWidth="2"
-        />
+        <rect x="16" y="21" width="32" height="16" rx="8" />
+        <circle cx="26" cy="19" r="8" />
+        <circle cx="38" cy="18" r="10" />
+      </g>
+
+      {/* Network Nodes (Using bgColor fill to create modern hollow "rings") */}
+      <g fill={bgColor || "#ffffff"} stroke="currentColor" strokeWidth="2">
+        <circle cx="32" cy="43" r="3" />
+
+        <circle cx="20" cy="51" r="3" />
+        <circle cx="44" cy="51" r="3" />
+
+        <circle cx="14" cy="59" r="3" />
+        <circle cx="26" cy="59" r="3" />
+        <circle cx="38" cy="59" r="3" />
+        <circle cx="50" cy="59" r="3" />
       </g>
     </svg>
   );

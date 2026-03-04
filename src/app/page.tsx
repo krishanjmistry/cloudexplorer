@@ -13,21 +13,6 @@ import InstancesPanel from "../components/InstancesPanel";
 import { useActiveGraph, useGraphData } from "../hooks/useGraph";
 import { GraphQueryType } from "../types";
 
-// TODO: verify this actually works
-export function headers() {
-  return [
-    {
-      source: "/(.*)",
-      headers: [
-        {
-          key: "Cross-Origin-Opener-Policy",
-          value: "same-origin-allow-popups",
-        },
-      ],
-    },
-  ];
-}
-
 export default function Home() {
   const [selectedScenarioId, setSelectedScenarioId] = useState<string | null>(
     null,

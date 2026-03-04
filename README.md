@@ -38,7 +38,7 @@ To sign in to Azure, you need to create and configure an App Registration as per
 For successful auth, a `single-page application` redirect URI should be configured to point to:
 
 ```
-https://<TODO-PAGE-URI-HERE>
+https://cloudexplorer.krishanmistry.com
 ```
 
 API permissions should be configured as follows:
