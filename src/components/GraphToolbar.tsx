@@ -107,7 +107,7 @@ export default function GraphToolbar({
       </button>
       <button
         type="button"
-        className={`${graphToolbarButtonBaseStyles} ${useLocal ? "border-green-300!" : "border-transparent"} px-3`}
+        className={`${graphToolbarButtonBaseStyles} ${useLocal ? "bg-green-700! text-white" : ""} border-transparent px-3`}
         onClick={handleUseLocalDataChange}
         disabled={!db}
       >
