@@ -86,21 +86,10 @@ export default function UserMenu() {
         setShowMenu(false);
       }
     };
-    const onScroll = (e: Event) => {
-      // ignore scrolls inside the menu container
-      if (
-        containerRef.current &&
-        containerRef.current.contains(e.target as Node)
-      ) {
-        return;
-      }
-      setShowMenu(false);
-    };
+
     document.addEventListener("mousedown", onClickOutside);
-    document.addEventListener("scroll", onScroll, true);
     return () => {
       document.removeEventListener("mousedown", onClickOutside);
-      document.removeEventListener("scroll", onScroll, true);
     };
   }, [showMenu]);
 
