@@ -1,10 +1,4 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["config:recommended", ":maintainLockFilesWeekly"],
-  "packageRules": [
-    {
-      "matchUpdateTypes": ["minor", "patch"],
-      "enabled": false
-    }
-  ]
+  "extends": ["config:recommended", ":maintainLockFilesWeekly"]
 }
